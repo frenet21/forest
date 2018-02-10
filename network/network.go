@@ -19,7 +19,7 @@ type IDStore struct {
 }
 
 // Start the server with the given address and port
-func startServer(){
+func startServer(done chan bool){
 	ln, err := net.Listen("tcp", LOCAL_SERV_PORT)
 	if err != nil{
 		log.Print("Failed to start the server.")
@@ -27,9 +27,12 @@ func startServer(){
 		log.Print("Server started on" + LOCAL_SERV_ADDR + LOCAL_SERV_PORT)
 	}
 
+	// Server start is completed
+	done<-true
+
+	// Start function goroutine to accept connection
 	for {
 		conn, _ := ln.Accept()
-		// Start function goroutine to accept connection
 		go acceptBlock(conn)
 	}
 }
@@ -67,18 +70,26 @@ func acceptBlock(conn net.Conn) Block {
 		// If it is there, discard the Block and stop this function
 		if strings.Contains(scanner.Text(), blockID) {
 			log.Print("Received block is known. Discarding...")
+			// Discard the block
 			/*
 			TODO: Discard block function
 			*/
-			return line, nil
+			return 0
+		}
+		// If it is not, add the block ID to the list 
+		else {
+			f, err := os.OpenFile(ID_LIST_PATH, os.O_APPEND|os.O_WRONLY, 0644) 
+			n, err := f.WriteString(blockID) 
+			f.Close()
+			
+			// Return the block to the frontend
+			return Block
 		}
 		line++
 	}
 	
-	// If it is not, return the Block to the frontend
-	/*
-	TODO: Pass on block for storage on frontend
-	*/
+	
+	
 }
 
 
