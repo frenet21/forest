@@ -39,7 +39,7 @@ func selectParentHash(encryptedMessage string) string {
 	return base64.URLEncoding(sha3.New512().Sum(RandomBytes(32)))
 }
 
-func CreateBlockData(message string, *key rsa.PublicKey) BlockData {
+func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	var out BlockData
 
 	// Block salt
@@ -72,15 +72,15 @@ func CreateBlockData(message string, *key rsa.PublicKey) BlockData {
 	// AES key encryption
 	cipheredKey, e := rsa.EncryptOAEP(sha3.New512(), rand.Reader, key, AESkey, nil)
 	// Panic on error
-	if (e!=nil) {
+	if e != nil {
 		panic(err)
 	}
 	// Convert to base64 and place in block
 	out.encryptedKey = base64.URLEncoding.EncodeToString(cipheredKey)
-	
+
 	// Select blockparent using blockpool
-	out.parent=selectParentHash(out.encryptedMessage)
-	
+	out.parent = selectParentHash(out.encryptedMessage)
+
 	// Done.
 	return out
 }
@@ -93,33 +93,33 @@ func StringifyBlockData(data BlockData) string {
 
 func DestringifyBlockData(data string) {
 	var out BlockData
-	
+
 	// TODO Implement this
 
 	return out
 }
 
-func CreateBlock (message string, *key rsa.PublicKey) Block {
+func CreateBlock(message string, key *rsa.PublicKey) Block {
 	var out Block
-	
+
 	// Block data
 	out.data = CreateBlockData(message, key)
-	
+
 	// Block ID
 	dataString := StringifyBlockData(out.data)
 	out.ID = base64.URLEncoding.EncodeToString(sha3.New512().Sum([]byte(dataString)))
-	
+
 	// Block pepper
 	out.pepper = RandomBytes(8)
 }
 
-func StringifyBlock (block Block) string {
+func StringifyBlock(block Block) string {
 	// TODO Implement this
 
 	return "Block serialization not yet ready. This is not your bug."
 }
 
-func DestringifyBlock (block string) Block {
+func DestringifyBlock(block string) Block {
 	var out Block
 
 	// TODO implement this
