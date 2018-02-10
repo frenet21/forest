@@ -177,6 +177,26 @@ func DestringifyBlock(block string) Block {
 	return out
 }
 
+// Returns the decrypted message from a block with a given PrivateKey
+func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error) {
+	// First, attempt to decrypt the encryptedKey
+	AESkey, e := key.Decrypt(rand.Reader, []byte(block.data.encryptedKey), new(rsa.OAEPOptions))
+	if e != nil {
+		return "", e
+	}
+
+	// Now, attempt to use that key to decrypt the encryptedMessage
+	AESCipher, err := aes.NewCipher(AESkey)
+	if err != nil {
+		return "", err
+	}
+	msg := []byte(block.data.encryptedMessage)
+	stream := cipher.NewCTR(AESCipher, msg[:aes.BlockSize])
+	msg = msg[aes.BlockSize:]
+	stream.XORKeyStream(msg, msg)
+	return string(msg), nil
+}
+
 // Call on main startup
 func Initialize() {
 	gob.Register(BlockData{})
