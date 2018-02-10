@@ -2,16 +2,16 @@ package block
 
 import (
 	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/base64"
 	"encoding/gob"
 	"io"
 
 	"golang.org/x/crypto/sha3"
 )
-import "crypto/cipher"
-import "crypto/rsa"
-import "crypto/aes"
-import "crypto/rand"
 
 type BlockData struct {
 	encryptedKey     string   // RSA encrypted AES key
