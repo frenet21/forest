@@ -32,7 +32,10 @@ type Block struct {
 // Returns n random bytes
 func RandomBytes(n int) []byte {
 	out := make([]byte, n)
-	rand.Read(out)
+	_, err := rand.Read(out)
+	if err != nil {
+		panic(err)
+	}
 	return out
 }
 
