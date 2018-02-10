@@ -15,10 +15,6 @@ const (
 	LOCAL_SERV_PORT = ":50123"
 )
 
-type IDStore struct {
-	ID string
-}
-
 // Start the server with the given address and port
 func startServer(done chan bool){
 	ln, err := net.Listen("tcp", LOCAL_SERV_PORT)
