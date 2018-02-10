@@ -120,6 +120,8 @@ func CreateBlock(message string, key *rsa.PublicKey) Block {
 	var out Block
 
 	// Block data
+	// This is where encryption is done...
+	// Constant factor delay?
 	out.data = CreateBlockData(message, key)
 
 	// Block ID
