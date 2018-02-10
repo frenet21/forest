@@ -32,13 +32,14 @@ type Block struct {
 // Returns n random bytes
 func RandomBytes(n int) []byte {
 	out := make([]byte, n)
-	return rand.Read(out)
+	rand.Read(out)
+	return out
 }
 
 // Selects a block parent based on the encrypted message
 func selectParentHash(encryptedMessage string) string {
 	// TODO: Connect this to the blockpool
-	return base64.URLEncoding(sha3.New512().Sum(RandomBytes(32)))
+	return base64.URLEncoding.EncodeToString(sha3.New512().Sum(RandomBytes(32)))
 }
 
 func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
