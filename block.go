@@ -28,12 +28,18 @@ type block struct {
 }
 
 // Returns n random bytes
-func RandomBytes(n int) ([]byte, error) {
+func RandomBytes(n int) []byte {
 	out := make([]byte, n)
 	return rand.Read(out)
 }
 
-func (message string, parent [64]byte, *key rsa.PublicKey) CreateBlockData() BlockData {
+// Selects a block parent based on the encrypted message
+func selectParentHash(encryptedMessage string) string {
+	// TODO: Connect this to the blockpool
+	return base64.URLEncoding(sha3.New512().Sum(RandomBytes(32)))
+}
+
+func CreateBlockData(message string, *key rsa.PublicKey) BlockData {
 	out := BlockData
 
 	// Block salt
@@ -72,8 +78,8 @@ func (message string, parent [64]byte, *key rsa.PublicKey) CreateBlockData() Blo
 	// Convert to base64 and place in block
 	out.encryptedKey = base64.URLEncoding.EncodeToString(cipheredKey)
 	
-	// Block parent, forwarded
-	out.parent=parent
+	// Select blockparent using blockpool
+	out.parent=selectParentHash(out.encryptedMessage)
 	
 	// Done.
 	return out
