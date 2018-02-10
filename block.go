@@ -71,4 +71,10 @@ func (message string, parent [64]byte, *key rsa.PublicKey) CreateBlockData() Blo
 	}
 	// Convert to base64 and place in block
 	out.encryptedKey = base64.URLEncoding.EncodeToString(cipheredKey)
+	
+	// Block parent, forwarded
+	out.parent=parent
+	
+	// Done.
+	return out
 }
