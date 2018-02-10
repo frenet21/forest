@@ -33,12 +33,13 @@ func RandomBytes(n int) ([]byte, error) {
 	return rand.Read(out)
 }
 
-func (message string, parent [64]byte, key rsa.PublicKey) CreateBlockData() BlockData {
+func (message string, parent [64]byte, *key rsa.PublicKey) CreateBlockData() BlockData {
 	out := BlockData
 
 	// Block salt
 	out.salt = RandomBytes(8)
 
+	// Message encryption
 	// Random AES256 key
 	AESkey := RandomBytes(32)
 	// Block cipher for that key
@@ -62,4 +63,12 @@ func (message string, parent [64]byte, key rsa.PublicKey) CreateBlockData() Bloc
 	// Convert to base64 and place in block
 	out.encryptedMessage = base64.URLEncoding.EncodeToString(cipherBytes)
 
+	// AES key encryption
+	cipheredKey, e := rsa.EncryptOAEP(sha3.New512(), rand.Reader, key, AESkey, nil)
+	// Panic on error
+	if (e!=nil) {
+		panic(err)
+	}
+	// Convert to base64 and place in block
+	out.encryptedKey = base64.URLEncoding.EncodeToString(cipheredKey)
 }
