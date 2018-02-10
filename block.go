@@ -112,3 +112,16 @@ func CreateBlock (message string, *key rsa.PublicKey) Block {
 	// Block pepper
 	out.pepper = RandomBytes(8)
 }
+
+func StringifyBlock (block Block) string {
+	// TODO Implement this
+
+	return "Block serialization not yet ready. This is not your bug."
+}
+
+func DestringifyBlock (block string) Block {
+	var out Block
+
+	// TODO implement this
+	return out
+}
