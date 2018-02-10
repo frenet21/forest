@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/gob"
 	"io"
+	"time"
 
 	"golang.org/x/crypto/sha3"
 )
@@ -49,6 +50,16 @@ func selectParentHash(encryptedMessage string) [64]byte {
 
 func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	var out BlockData
+
+	// Controls how long we wait for encryption to complete
+	// Go doesn't perform encryptions in constant-time...
+	// So to prevent timing attacks, we wait after encryption
+	// The time is taken before running the encryption, and then after encrypt
+	//    we wait until that much time has elapsed
+	// Thus, we get pseudo-constant time behavior
+	// This time needs to be long enough that encryption of the key and of the
+	//    message will be complete, each in one period, for any (reasonable) message.
+	constantDelayFactor := 500 * time.Millisecond
 
 	// Block salt
 	copy(out.salt[:], RandomBytes(8)[:8])
