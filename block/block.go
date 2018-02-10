@@ -179,8 +179,24 @@ func DestringifyBlock(block string) Block {
 
 // Returns the decrypted message from a block with a given PrivateKey
 func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error) {
+	// Controls how long we wait for decryption to complete
+	// Go doesn't perform encryptions in constant-time...
+	// So to prevent timing attacks, we wait after decryption
+	// The time is taken before running the decryption, and then after encrypt
+	//    we wait until that much time has elapsed
+	// Thus, we get pseudo-constant time behavior
+	// This time needs to be long enough that decryption of the key and of the
+	//    message will be complete, each in one period, for any (reasonable) message.
+	constantDelayFactor := 500 * time.Millisecond
+
 	// First, attempt to decrypt the encryptedKey
+	// First, get current time and add constant delay factor
+	endpoint := time.Now().Add(constantDelayFactor)
+	// Then actually attempt decryption
 	AESkey, e := key.Decrypt(rand.Reader, []byte(block.data.encryptedKey), new(rsa.OAEPOptions))
+	// Now wait until endpoint
+	time.Sleep(time.Until(endpoint))
+	// Return on error
 	if e != nil {
 		return "", e
 	}
@@ -193,7 +209,13 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	msg := []byte(block.data.encryptedMessage)
 	stream := cipher.NewCTR(AESCipher, msg[:aes.BlockSize])
 	msg = msg[aes.BlockSize:]
+	// First, get current time and add constant delay factor
+	endpoint := time.Now().Add(constantDelayFactor)
+	// Now actually attempt decryption
 	stream.XORKeyStream(msg, msg)
+	// Now wait until endpoint
+	time.Sleep(time.Until(endpoint))
+	// And return
 	return string(msg), nil
 }
 
