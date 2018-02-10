@@ -99,7 +99,13 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	out.encryptedMessage = base64.URLEncoding.EncodeToString(cipherBytes)
 
 	// AES key encryption
+	// First, get current time and add delay factor
+	endpoint = time.Now().Add(constantDelayFactor)
+	// Then actually run encryption
 	cipheredKey, e := rsa.EncryptOAEP(sha3.New512(), rand.Reader, key, AESkey, nil)
+	// Now, delay until we reach endpoint
+	time.Sleep(time.Until(endpoint))
+
 	// Panic on error
 	if e != nil {
 		panic(e)
