@@ -1,7 +1,9 @@
 package block
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/gob"
 	"io"
 
 	"golang.org/x/crypto/sha3"
@@ -87,14 +89,20 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 
 // BlockData -> string
 func StringifyBlockData(data BlockData) string {
-	// TODO implement this
-	return ""
+	var buf bytes.Buffer
+	encoder := gob.NewEncoder(&buf)
+	encoder.Encode(data)
+	raw := buf.Bytes()
+	return string(raw[:buf.Len()])
 }
 
 func DestringifyBlockData(data string) {
 	var out BlockData
 
-	// TODO Implement this
+	var buf bytes.Buffer
+	buf.WriteString(data)
+	decoder = gob.NewDecoder(&buf)
+	decoder.decode(out)
 
 	return out
 }
@@ -124,4 +132,10 @@ func DestringifyBlock(block string) Block {
 
 	// TODO implement this
 	return out
+}
+
+// Call on main startup
+func Initialize() {
+	gob.Register(BlockData{})
+	gob.Register(Block{})
 }
