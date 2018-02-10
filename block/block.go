@@ -86,8 +86,15 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	stream := cipher.NewCTR(AESCipher, iv)
 	// Plaintext bytes
 	plaintext := []byte(message)
+
 	// Encryption
+	// First, get current time and add delay factor
+	endpoint := time.Now().Add(constantDelayFactor)
+	// Then actually run encryption
 	stream.XORKeyStream(cipherBytes[aes.BlockSize:], plaintext)
+	// Now, delay until we reach endpoint
+	time.Sleep(time.Until(endpoint))
+
 	// Convert to base64 and place in block
 	out.encryptedMessage = base64.URLEncoding.EncodeToString(cipherBytes)
 
