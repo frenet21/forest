@@ -1,4 +1,4 @@
-package main
+package network
 
 import (
 	"net"
@@ -9,6 +9,7 @@ const (
 	LOCAL_SERV_ADDR = "localhost"
 	LOCAL_SERV_PORT = ":50123"
 )
+
 func startServer(){
 	ln, err := net.Listen("tcp", LOCAL_SERV_PORT)
 	if err != nil{
