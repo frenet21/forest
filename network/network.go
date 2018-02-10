@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	ID_LIST_PATH = "/network/ID_LIST.txt"
+	ID_LIST_PATH = "/network/BLOCK_ID_LIST.txt"
+	KNOWN_CLIENTS_PATH = "/network/KNOWN_CLIENTS.txt"
 	LOCAL_SERV_ADDR = "localhost"
 	LOCAL_SERV_PORT = ":50123"
 )
@@ -41,13 +42,13 @@ func startServer(done chan bool){
 // Decide to accept or discard
 // Accepted block is returned to the frontend for storing and later viewing
 
-func acceptBlock(conn net.Conn) Block {
+func acceptBlock(conn net.Conn) {
 	// Destringify the "conn" string with function from package 'block'
 	Block := block.DestringifyBlock(conn)
 	// Select the block ID from the Block
 	blockID := Block.ID
 
-	// Check if the known_hash.txt file exists
+	// Check if the known hash text file exists
 	if _, err := os.Stat(ID_LIST_PATH) {
 		// If not, create it...
 		file, err := os.Create(ID_LIST_PATH)
@@ -81,23 +82,17 @@ func acceptBlock(conn net.Conn) Block {
 			f, err := os.OpenFile(ID_LIST_PATH, os.O_APPEND|os.O_WRONLY, 0644) 
 			n, err := f.WriteString(blockID) 
 			f.Close()
-			
-			// Return the block to the frontend
-			return Block
+
+			// Pass block to forwardBlock function
+			forwardBlock(Block)
+			return 0
 		}
 		line++
 	}
-	
-	
-	
 }
 
 
 // After acceptBlock accepts block, and stored for later viewing
-func receiveBlock() {
-
-}
-
-func sendBlock() {
+func forwardBlock(Block Block) {
 
 }
