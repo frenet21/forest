@@ -1,4 +1,4 @@
-package block
+package Block
 
 import (
 	"encoding/base64"
@@ -18,7 +18,7 @@ type BlockData struct {
 	parent           [64]byte // Hash of parent block
 }
 
-type block struct {
+type Block struct {
 	// Block Data
 	data BlockData
 
@@ -40,7 +40,7 @@ func selectParentHash(encryptedMessage string) string {
 }
 
 func CreateBlockData(message string, *key rsa.PublicKey) BlockData {
-	out := BlockData
+	var out BlockData
 
 	// Block salt
 	out.salt = RandomBytes(8)
@@ -83,4 +83,32 @@ func CreateBlockData(message string, *key rsa.PublicKey) BlockData {
 	
 	// Done.
 	return out
+}
+
+// BlockData -> string
+func StringifyBlockData(data BlockData) string {
+	// TODO implement this
+	return ""
+}
+
+func DestringifyBlockData(data string) {
+	var out BlockData
+	
+	// TODO Implement this
+
+	return out
+}
+
+func CreateBlock (message string, *key rsa.PublicKey) Block {
+	var out Block
+	
+	// Block data
+	out.data = CreateBlockData(message, key)
+	
+	// Block ID
+	dataString := StringifyBlockData(out.data)
+	out.ID = base64.URLEncoding.EncodeToString(sha3.New512().Sum([]byte(dataString)))
+	
+	// Block pepper
+	out.pepper = RandomBytes(8)
 }
