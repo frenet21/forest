@@ -194,10 +194,10 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	endpoint := time.Now().Add(constantDelayFactor)
 	// Then actually attempt decryption
 	encryptedKeyBytes, er := base64.URLEncoding.DecodeString(block.data.encryptedKey)
-	if er!=nil {
+	if er != nil {
 		return "", er
 	}
-	AESkey, e := key.Decrypt(rand.Reader, encryptedKeyBytes), new(rsa.OAEPOptions))
+	AESkey, e := key.Decrypt(rand.Reader, encryptedKeyBytes, new(rsa.OAEPOptions))
 	// Now wait until endpoint
 	time.Sleep(time.Until(endpoint))
 	// Return on error
@@ -210,14 +210,14 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	if err != nil {
 		return "", err
 	}
-	msg, error := base64.URLEncoding.DecodeString(block.data.encryptedMessage))
-	if error!=nil {
+	msg, error := base64.URLEncoding.DecodeString(block.data.encryptedMessage)
+	if error != nil {
 		return "", error
 	}
 	stream := cipher.NewCTR(AESCipher, msg[:aes.BlockSize])
 	msg = msg[aes.BlockSize:]
 	// First, get current time and add constant delay factor
-	endpoint := time.Now().Add(constantDelayFactor)
+	endpoint = time.Now().Add(constantDelayFactor)
 	// Now actually attempt decryption
 	stream.XORKeyStream(msg, msg)
 	// Now wait until endpoint
