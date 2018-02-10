@@ -37,24 +37,29 @@ func RandomBytes(n int) []byte {
 }
 
 // Selects a block parent based on the encrypted message
-func selectParentHash(encryptedMessage string) string {
+func selectParentHash(encryptedMessage string) [64]byte {
 	// TODO: Connect this to the blockpool
-	return base64.URLEncoding.EncodeToString(sha3.New512().Sum(RandomBytes(32)))
+	var out [64]byte
+	copy(out[:], sha3.New512().Sum(RandomBytes(32))[:64])
+	return out
 }
 
 func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	var out BlockData
 
 	// Block salt
-	out.salt = RandomBytes(8)
+	copy(out.salt[:], RandomBytes(8)[:8])
 
 	// Message encryption
 	// Random AES256 key
 	AESkey := RandomBytes(32)
 	// Block cipher for that key
-	AESCipher := aes.NewCipher(AESkey)
+	AESCipher, e := aes.NewCipher(AESkey)
+	if e != nil {
+		panic(e)
+	}
 	// encrypted message bytes
-	cipherBytes := make([]bytes, aes.BlockSize+len(message))
+	cipherBytes := make([]byte, aes.BlockSize+len(message))
 	// Initialization Vector
 	// Delivered with ciphertext as it is necessary for decryption...
 	// But it doesn't have to be private to be secure
@@ -76,7 +81,7 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	cipheredKey, e := rsa.EncryptOAEP(sha3.New512(), rand.Reader, key, AESkey, nil)
 	// Panic on error
 	if e != nil {
-		panic(err)
+		panic(e)
 	}
 	// Convert to base64 and place in block
 	out.encryptedKey = base64.URLEncoding.EncodeToString(cipheredKey)
@@ -97,13 +102,13 @@ func StringifyBlockData(data BlockData) string {
 	return string(raw[:buf.Len()])
 }
 
-func DestringifyBlockData(data string) {
+func DestringifyBlockData(data string) BlockData {
 	var out BlockData
 
 	var buf bytes.Buffer
 	buf.WriteString(data)
-	decoder = gob.NewDecoder(&buf)
-	decoder.decode(out)
+	decoder := gob.NewDecoder(&buf)
+	decoder.Decode(out)
 
 	return out
 }
@@ -116,10 +121,12 @@ func CreateBlock(message string, key *rsa.PublicKey) Block {
 
 	// Block ID
 	dataString := StringifyBlockData(out.data)
-	out.ID = base64.URLEncoding.EncodeToString(sha3.New512().Sum([]byte(dataString)))
+	copy(out.ID[:], sha3.New512().Sum([]byte(dataString))[:64])
 
 	// Block pepper
-	out.pepper = RandomBytes(8)
+	copy(out.pepper[:], RandomBytes(8)[:8])
+
+	return out
 }
 
 func StringifyBlock(block Block) string {
