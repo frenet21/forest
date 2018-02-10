@@ -130,15 +130,21 @@ func CreateBlock(message string, key *rsa.PublicKey) Block {
 }
 
 func StringifyBlock(block Block) string {
-	// TODO Implement this
-
-	return "Block serialization not yet ready. This is not your bug."
+	var buf bytes.Buffer
+	encoder := gob.NewEncoder(&buf)
+	encoder.Encode(block)
+	raw := buf.Bytes()
+	return string(raw[:buf.Len()])
 }
 
 func DestringifyBlock(block string) Block {
 	var out Block
 
-	// TODO implement this
+	var buf bytes.Buffer
+	buf.WriteString(block)
+	decoder := gob.NewDecoder(&buf)
+	decoder.Decode(out)
+
 	return out
 }
 
