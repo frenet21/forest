@@ -1,22 +1,30 @@
 package pool
 
 import (
+	"time"
 	"golang.org/x/crypto/sha3"
 	"fmt"
 	"sort"
 	"strings"
 )
 
-type encryptedMessageAndHash struct {
-	encryptedMessage string
-	blockpool []string
+type HashDate struct {
+	hash string
+	sent time.Time
 }
 
+type Blockpool struct {
+	hashes [1000]string
+	queue []HashDate
+}
+
+var blockpool Blockpool // Blockpool singleton, usually(?)
+
 // Selects a block parent based on the encrypted message
-func selectParentHash(info encryptedMessageAndHash) string {
+func selectParentHash(string encryptedMessage, pool Blockpool) string {
 	//Add hash of encrypted message to the end of the blockpool array
 	hash := string(sha3.New512().Sum(byte[](info.encryptedMessage))[:64])
-	blockpoolStrings := append(info.blockpool, hash)
+	blockpoolStrings := append(pool.hashes, hash)
 
 	//Sorted blockpool strings
 	sort.Strings(blockpoolStrings)
