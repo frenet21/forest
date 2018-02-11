@@ -179,6 +179,20 @@ func DestringifyBlock(block string) Block {
 
 // Returns the decrypted message from a block with a given PrivateKey
 func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error) {
+	// First off, we confirm the integrity of the block data
+	// If the blockID doesn't match the hash of the blockdata, then it has been modified
+	// If that occurs, report an error
+	dataString := StringifyBlockData(out.data)
+	test := sha3.New512().Sum([]byte(dataString))
+	if !bytes.Equal(test, []byte(block.ID)) {
+		// The blockdata has been modified!
+		// Error out
+		return "", error{"Blockdata hash mismatch: ID " + block.ID +
+			" is not equal to hash of data " + string(test[:64])}
+	}
+	// No data tampering has occurred if we get here...
+	// Or if it has, it caused a collision in SHA3-512, which is insanely unlikely
+
 	// Controls how long we wait for decryption to complete
 	// Go doesn't perform encryptions in constant-time...
 	// So to prevent timing attacks, we wait after decryption
