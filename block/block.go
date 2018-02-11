@@ -178,7 +178,7 @@ func DestringifyBlock(block string) Block {
 // Returns the decrypted message from a block with a given PrivateKey
 func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error) {
 	// First off, we confirm the integrity of the block data
-	// If the blockID doesn't match the hash of the blockdata, then it has been modified
+	// If the blockID does not match the hash of the blockdata, then it has been modified
 	// If that occurs, report an error
 	dataString := StringifyBlockData(block.data)
 	test := sha3.New512().Sum([]byte(dataString))
