@@ -33,6 +33,6 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("Preencrypt: %s. Postencrypt: %s. Matches: %t", message1, output1, message1 == output1)
-	fmt.Printf("Preencrypt: %s. Postencrypt: %s. Matches: %t", message2, output2, message2 == output2)
+	fmt.Printf("Preencrypt: %s. Postencrypt: %s. Matches: %t\n", message1, output1, message1 == output1)
+	fmt.Printf("Preencrypt: %s. Postencrypt: %s. Matches: %t\n", message2, output2, message2 == output2)
 }
