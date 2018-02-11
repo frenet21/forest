@@ -8,7 +8,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/gob"
-	"io"
+	"errors"
 	"time"
 
 	"golang.org/x/crypto/sha3"
@@ -19,6 +19,7 @@ type BlockData struct {
 	encryptedMessage string   // AES encrypted message
 	salt             [8]byte  // Random salt
 	parent           [64]byte // Hash of parent block
+	nonce            []byte   // Nonce used for GCM
 }
 
 type Block struct {
@@ -72,18 +73,15 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	if e != nil {
 		panic(e)
 	}
-	// encrypted message bytes
-	cipherBytes := make([]byte, aes.BlockSize+len(message))
+	// AEAD
+	auth, err := cipher.NewGCM(AESCipher)
+	if err != nil {
+		panic(err)
+	}
 	// Initialization Vector
 	// Delivered with ciphertext as it is necessary for decryption...
 	// But it doesn't have to be private to be secure
-	iv := cipherBytes[:aes.BlockSize]
-	// If error reading IV
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		panic(err) // panic!!
-	}
-	// Stream cipher
-	stream := cipher.NewCTR(AESCipher, iv)
+	out.nonce = RandomBytes(auth.NonceSize())
 	// Plaintext bytes
 	plaintext := []byte(message)
 
@@ -91,7 +89,7 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	// First, get current time and add delay factor
 	endpoint := time.Now().Add(constantDelayFactor)
 	// Then actually run encryption
-	stream.XORKeyStream(cipherBytes[aes.BlockSize:], plaintext)
+	cipherBytes := auth.Seal(nil, out.nonce, plaintext, out.salt[:])
 	// Now, delay until we reach endpoint
 	time.Sleep(time.Until(endpoint))
 
@@ -182,13 +180,13 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	// First off, we confirm the integrity of the block data
 	// If the blockID doesn't match the hash of the blockdata, then it has been modified
 	// If that occurs, report an error
-	dataString := StringifyBlockData(out.data)
+	dataString := StringifyBlockData(block.data)
 	test := sha3.New512().Sum([]byte(dataString))
-	if !bytes.Equal(test, []byte(block.ID)) {
+	if !bytes.Equal(test, block.ID[:]) {
 		// The blockdata has been modified!
 		// Error out
-		return "", error{"Blockdata hash mismatch: ID " + block.ID +
-			" is not equal to hash of data " + string(test[:64])}
+		return "", errors.New("Blockdata hash mismatch: ID " + string(block.ID[:64]) +
+			" is not equal to hash of data " + string(test[:64]))
 	}
 	// No data tampering has occurred if we get here...
 	// Or if it has, it caused a collision in SHA3-512, which is insanely unlikely
@@ -229,14 +227,19 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	if error != nil {
 		return "", error
 	}
-	stream := cipher.NewCTR(AESCipher, msg[:aes.BlockSize])
-	msg = msg[aes.BlockSize:]
+	auth, er := cipher.NewGCM(AESCipher)
+	if er != nil {
+		return "", er
+	}
 	// First, get current time and add constant delay factor
 	endpoint = time.Now().Add(constantDelayFactor)
 	// Now actually attempt decryption
-	stream.XORKeyStream(msg, msg)
+	msg, error = auth.Open(nil, block.data.nonce, msg, block.data.salt[:])
 	// Now wait until endpoint
 	time.Sleep(time.Until(endpoint))
+	if error != nil {
+		return "", error
+	}
 	// And return
 	return string(msg), nil
 }
