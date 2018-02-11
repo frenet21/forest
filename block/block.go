@@ -17,20 +17,20 @@ import (
 )
 
 type BlockData struct {
-	encryptedKey     string   // RSA encrypted AES key
-	encryptedMessage string   // AES encrypted message
-	salt             [8]byte  // Random salt
-	parent           [64]byte // Hash of parent block
-	nonce            []byte   // Nonce used for GCM
+	EncryptedKey     string   // RSA encrypted AES key
+	EncryptedMessage string   // AES encrypted message
+	Salt             [8]byte  // Random salt
+	Parent           [64]byte // Hash of parent block
+	Nonce            []byte   // Nonce used for GCM
 }
 
 type Block struct {
 	// Block Data
-	data BlockData
+	Data BlockData
 
 	// Non-hashed data
 	ID     [64]byte // Hash of block data
-	pepper [8]byte  // Random non-hashed salt
+	Pepper [8]byte  // Random non-hashed salt
 }
 
 // Returns n random bytes
@@ -64,7 +64,7 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	constantDelayFactor := 500 * time.Millisecond
 
 	// Block salt
-	copy(out.salt[:], RandomBytes(8)[:8])
+	copy(out.Salt[:], RandomBytes(8)[:8])
 
 	// Message encryption
 	// Random AES256 key
@@ -82,7 +82,7 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	// Initialization Vector
 	// Delivered with ciphertext as it is necessary for decryption...
 	// But it doesn't have to be private to be secure
-	out.nonce = RandomBytes(auth.NonceSize())
+	out.Nonce = RandomBytes(auth.NonceSize())
 	// Plaintext bytes
 	plaintext := []byte(message)
 
@@ -90,21 +90,21 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	// First, get current time and add delay factor
 	endpoint := time.Now().Add(constantDelayFactor)
 	// Then actually run encryption
-	cipherBytes := auth.Seal(nil, out.nonce, plaintext, out.salt[:])
+	cipherBytes := auth.Seal(nil, out.Nonce, plaintext, out.Salt[:])
 	// Now, delay until we reach endpoint
 	time.Sleep(time.Until(endpoint))
 
 	// Convert to base64 and place in block
-	out.encryptedMessage = base64.URLEncoding.EncodeToString(cipherBytes)
+	out.EncryptedMessage = base64.URLEncoding.EncodeToString(cipherBytes)
 
 	// Select blockparent using blockpool
-	out.parent = selectParentHash(out.encryptedMessage)
+	out.Parent = selectParentHash(out.EncryptedMessage)
 
 	// AES key encryption
 	// First, get current time and add delay factor
 	endpoint = time.Now().Add(constantDelayFactor)
 	// Then actually run encryption
-	cipheredKey, e := rsa.EncryptOAEP(sha3.New512(), rand.Reader, key, AESkey, out.parent[:])
+	cipheredKey, e := rsa.EncryptOAEP(sha3.New512(), rand.Reader, key, AESkey, out.Parent[:])
 	// Now, delay until we reach endpoint
 	time.Sleep(time.Until(endpoint))
 
@@ -113,7 +113,7 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 		panic(e)
 	}
 	// Convert to base64 and place in block
-	out.encryptedKey = base64.URLEncoding.EncodeToString(cipheredKey)
+	out.EncryptedKey = base64.URLEncoding.EncodeToString(cipheredKey)
 
 	// Done.
 	return out
@@ -145,14 +145,14 @@ func CreateBlock(message string, key *rsa.PublicKey) Block {
 	// Block data
 	// This is where encryption is done...
 	// Constant factor delay?
-	out.data = CreateBlockData(message, key)
+	out.Data = CreateBlockData(message, key)
 
 	// Block ID
-	dataString := StringifyBlockData(out.data)
+	dataString := StringifyBlockData(out.Data)
 	copy(out.ID[:], sha3.New512().Sum([]byte(dataString))[:64])
 
 	// Block pepper
-	copy(out.pepper[:], RandomBytes(8)[:8])
+	copy(out.Pepper[:], RandomBytes(8)[:8])
 
 	return out
 }
@@ -181,7 +181,7 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	// First off, we confirm the integrity of the block data
 	// If the blockID doesn't match the hash of the blockdata, then it has been modified
 	// If that occurs, report an error
-	dataString := StringifyBlockData(block.data)
+	dataString := StringifyBlockData(block.Data)
 	test := sha3.New512().Sum([]byte(dataString))
 	if false && !bytes.Equal(test, block.ID[:]) {
 		// The blockdata has been modified!
@@ -204,14 +204,14 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 
 	// First, attempt to decrypt the encryptedKey
 	// First, get our encrypted key as a byte array
-	encryptedKeyBytes, er := base64.URLEncoding.DecodeString(block.data.encryptedKey)
+	encryptedKeyBytes, er := base64.URLEncoding.DecodeString(block.Data.EncryptedKey)
 	if er != nil {
 		return "", er
 	}
 	// Then, get current time and add constant delay factor
 	endpoint := time.Now().Add(constantDelayFactor)
 	// Then actually attempt decryption
-	AESkey, e := rsa.DecryptOAEP(sha3.New512(), rand.Reader, key, encryptedKeyBytes, block.data.parent[:])
+	AESkey, e := rsa.DecryptOAEP(sha3.New512(), rand.Reader, key, encryptedKeyBytes, block.Data.Parent[:])
 	// Now wait until endpoint
 	time.Sleep(time.Until(endpoint))
 	// Return on error
@@ -224,7 +224,7 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	if err != nil {
 		return "", err
 	}
-	msg, error := base64.URLEncoding.DecodeString(block.data.encryptedMessage)
+	msg, error := base64.URLEncoding.DecodeString(block.Data.EncryptedMessage)
 	if error != nil {
 		return "", error
 	}
@@ -235,7 +235,7 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	// First, get current time and add constant delay factor
 	endpoint = time.Now().Add(constantDelayFactor)
 	// Now actually attempt decryption
-	msg, error = auth.Open(nil, block.data.nonce, msg, block.data.salt[:])
+	msg, error = auth.Open(nil, block.Data.Nonce, msg, block.Data.Salt[:])
 	// Now wait until endpoint
 	time.Sleep(time.Until(endpoint))
 	if error != nil {
