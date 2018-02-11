@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"../block"
+	"github.com/stellar-tech/forest/block"
 )
 
 const (

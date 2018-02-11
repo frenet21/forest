@@ -1,5 +1,4 @@
-// pool
-package main 
+package pool
 
 import (
 	//"golang.org/x/crypto/sha3"

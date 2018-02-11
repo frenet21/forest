@@ -11,6 +11,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/stellar-tech/forest/pool"
+
 	"golang.org/x/crypto/sha3"
 )
 
