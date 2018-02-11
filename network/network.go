@@ -1,17 +1,19 @@
 package network
 
 import (
-	"encoding/gob"
+	"bufio"
+	"fmt"
 	"log"
 	"net"
 	"os"
+	"strings"
 	
 	"github.com/stellar-tech/forest/block"
 )
 
 const (
-	ID_LIST_PATH = "/network/BLOCK_ID_LIST.txt"
-	KNOWN_CLIENTS_PATH = "/network/KNOWN_CLIENTS.txt"
+	ID_LIST_PATH = "BLOCK_ID_LIST.txt"
+	KNOWN_CLIENTS_PATH = "KNOWN_CLIENTS.txt"
 	LOCAL_SERV_ADDR = "localhost"
 	LOCAL_SERV_PORT = ":50123"
 	RECEIVER_PORT = ":50123"
@@ -52,7 +54,7 @@ func acceptBlock(conn net.Conn) {
 	// Destringify the "conn" string with function from package 'block'
 	Block := block.DestringifyBlock(conn)
 	// Select the block ID from the Block
-	blockID := Block.ID
+	blockID := string(Block.ID[:64])
 
 	// Check if the known hash text file exists
 	_, err := os.Stat(ID_LIST_PATH)
@@ -67,10 +69,9 @@ func acceptBlock(conn net.Conn) {
 
 
 	// Search the known_hash.txt file for the blockID
-	f, err := os.Open(path)
+	f, err := os.Open(ID_LIST_PATH)
 	if err != nil {
 		log.Print("[NET - ACCEPTOR] Could not open the file.")
-		return 0
 	}
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
@@ -95,7 +96,7 @@ func acceptBlock(conn net.Conn) {
 // acceptBlock function passes OK'd blocks here
 // These blocks are sent to everyone on the client list
 // And the decryption attempt function is called here
-func forwardBlock(block Block) {
+func forwardBlock(block block.Block) {
 	// Open the known client list path
 	file, err := os.Open(KNOWN_CLIENTS_PATH)
 	if err != nil {
@@ -126,7 +127,6 @@ func forwardBlock(block Block) {
 	message, err := block.AttemptDecrypt(block, priKey)
 	if err != nil {
 		log.Print("[NET - FORWARDER] Decryption failed. Discarding block.")
-		return 0
 	} else {
 		log.Print("[NET - FORWARDER] Decryption success. Sending message to frontend.")
 		log.Print("[NET - FORWARDER] \n[BEGIN DECRYPTED MESSAGE]\n"+message+"\n[END DECRYPTED MESSAGE]")
@@ -138,7 +138,7 @@ func forwardBlock(block Block) {
 
 // Send a block to a given address.
 // Important note: sendAddress should be stored as IP:PORT
-func sendBlock(block Block, sendAddress string) {
+func sendBlock(block block.Block, sendAddress string) {
 	log.Print("[NET - SENDER] Dialing " + sendAddress + "... ")
 	// Translate the address string to a dialable TCP address
 	tcpAddr, err := net.ResolveTCPAddr("tcp", sendAddress)
@@ -146,7 +146,6 @@ func sendBlock(block Block, sendAddress string) {
 	// Skip attempted send if address dial fails.
 	if err != nil {
 		log.Print("[NET - SENDER] Failed dialing " + sendAddress + ". Skipping.")
-		return 0
 	} 
 
 	// Send block to socket
