@@ -85,6 +85,9 @@ func SelectParentHash(encryptedMessage string) string {
 		if strings.Compare(blockpoolStrings[i], hash) == 0 {
 			if i == len(blockpoolStrings)-1 {
 				element = i + 1
+				if element == len(blockpoolStrings) {
+					element = i - 1
+				}
 			}
 		}
 	}
