@@ -63,6 +63,8 @@ func updateBlockpool() {
 
 // Selects a block parent based on the encrypted message
 func selectParentHash(encryptedMessage string) string {
+	updateBlockpool()
+
 	//Add hash of encrypted message to the end of the blockpool array
 	hash := string(sha3.New512().Sum([]byte(encryptedMessage))[:64])
 	blockpoolStrings := append(blockpool.hashes[:], hash)
