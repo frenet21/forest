@@ -219,7 +219,7 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	// Thus, we get pseudo-constant time behavior
 	// This time needs to be long enough that decryption of the key and of the
 	//    message will be complete, each in one period, for any (reasonable) message.
-	constantDelayFactor := 500 * time.Millisecond
+	constantDelayFactor := 5 * time.Millisecond
 
 	// First, attempt to decrypt the encryptedKey
 	// First, get our encrypted key as a byte array
