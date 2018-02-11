@@ -2,26 +2,44 @@
 package main 
 
 import (
-	"golang.org/x/crypto/sha3"
+	//"golang.org/x/crypto/sha3"
 	"fmt"
+	"sort"
+	"strings"
 )
 
 type encryptedMessageAndHash struct {
 	encryptedMessage string
-	blockpool [1000]byte
+	blockpool []string
 }
 
 // Selects a block parent based on the encrypted message
-func selectParentHash(info encryptedMessageAndHash) [64]byte {
-	// TODO: Connect this to the blockpool
-	var out [64]byte
-	copy(out[:], sha3.New512().Sum([]byte(info.encryptedMessage)))
-	return out
+func selectParentHash(info encryptedMessageAndHash) string {
+	//Added encrypted message to the end of the blockpool array
+	blockpoolStrings := append(info.blockpool, info.encryptedMessage)
+
+	//Sorted blockpool strings
+	fmt.Println(blockpoolStrings)
+	sort.Strings(blockpoolStrings)
+	fmt.Println(blockpoolStrings)
+
+	var element int
+
+	//Determine the element after the encrypted message
+	for i := 0; i < len(blockpoolStrings); i++ {
+		if(strings.Compare(blockpoolStrings[i], info.encryptedMessage) == 0){
+			if(i == len(blockpoolStrings) - 1){
+				element = i + 1
+			}
+		}
+	}
+
+	fmt.Println(element)
+
+	//return parent hash
+	return blockpoolStrings[element]
 }
 
 func main() {
-	var a [1000]byte
-	info := encryptedMessageAndHash{encryptedMessage: "Bobby", blockpool: a}
-	out := selectParentHash(info)
-	fmt.Printf("%x", out)
+	
 }
