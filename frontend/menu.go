@@ -84,11 +84,8 @@ func storeAPublicKey(publicKey string, userName string){
     }
     defer file.Close()
 
-    byteSlice := []byte(publicKey+","+userName+"\n")
-    bytesWritten, err := file.Write(byteSlice)
-    if err != nil {
-    	fmt.Println(err)
-    }
-    fmt.Printf("Wrote %d in text file.\n", bytesWritten)
+	li, err := file.WriteString(publicKey+","+userName+"\n")
+    fmt.Printf("wrote %d into the file.\n", li)
+
 }
 
