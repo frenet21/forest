@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"errors"
 	"fmt"
 
 	"./block"
@@ -23,6 +24,16 @@ func main() {
 
 	transmission1 := block.CreateBlock(message1, &publicKey)
 	transmission2 := block.CreateBlock(message2, &publicKey)
+
+	str1 := block.StringifyBlock(transmission1)
+	str2 := block.StringifyBlock(transmission2)
+
+	reception1 := block.DestringifyBlock(str1)
+	reception2 := block.DestringifyBlock(str2)
+
+	if reception1.ID != transmission1.ID || reception2.ID != transmission2.ID {
+		panic(errors.New("ID mismatch"))
+	}
 
 	output1, err := block.AttemptDecrypt(transmission1, privateKey)
 	if err != nil {
