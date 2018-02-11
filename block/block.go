@@ -210,7 +210,7 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	// Then, get current time and add constant delay factor
 	endpoint := time.Now().Add(constantDelayFactor)
 	// Then actually attempt decryption
-	AESkey, e := key.Decrypt(rand.Reader, encryptedKeyBytes, new(rsa.OAEPOptions))
+	AESkey, e := rsa.DecryptOAEP(sha3.New512(), rand.Reader, key, encryptedKeyBytes, nil)
 	// Now wait until endpoint
 	time.Sleep(time.Until(endpoint))
 	// Return on error
