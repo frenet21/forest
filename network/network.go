@@ -85,22 +85,39 @@ func acceptBlock(conn net.Conn) {
 
 
 // acceptBlock function passes OK'd blocks here
+// These blocks are sent to everyone on the client list
+// And the decryption attempt function is called here
 func forwardBlock(block Block) {
+	// Open the known client list path
+	file, err := os.Open(KNOWN_CLIENTS_PATH)
+	if err != nil {
+		log.Print("[NET - FORWARDER] Failed to open client list.")
+	}
+	defer file.Close()
 
-	/*
-	TODO: Forward block to rest of network nodes
-	*/
-	
+	// Scan each line of the file
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
 
+	// Send off to each client on the list
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
+		sendAddress := scanner.Text()
+		sendBlock(block, sendAddress)
+	}
+	if err != nil {
+		log.Print("[NET - FORWARDER] Failed to read opened client list.")
+	}
 
+	// Attempt a decryption of the received block after passing to known clients
 	message, err := block.AttemptDecrypt(block, priKey)
 	if err != nil {
 		log.Print("[NET - FORWARDER] Decryption failed. Discarding block.")
 		return 0
+	} else {
+		log.Print("[NET - FORWARDER] Decryption success. Sending message to frontend.")
+		/*
+		TODO: Send block to frontend function
+		*/
 	}
-
-	/*
-	TODO: Send block to frontend here
-	*/
 }
-
