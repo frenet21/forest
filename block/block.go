@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/gob"
 	"errors"
+	"fmt"
 	"time"
 
 	"../pool"
@@ -61,20 +62,24 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	// Thus, we get pseudo-constant time behavior
 	// This time needs to be long enough that encryption of the key and of the
 	//    message will be complete, each in one period, for any (reasonable) message.
-	constantDelayFactor := 500 * time.Millisecond
+	constantDelayFactor := 250 * time.Millisecond
 
 	// Block salt
 	copy(out.Salt[:], RandomBytes(8)[:8])
 
 	// Message encryption
 	// Random AES256 key
+	fmt.Println("Generating AES256 key...")
 	AESkey := RandomBytes(32)
 	// Block cipher for that key
 	AESCipher, e := aes.NewCipher(AESkey)
 	if e != nil {
 		panic(e)
 	}
+	fmt.Println("Done.\n")
+	fmt.Println("")
 	// AEAD
+	fmt.Println("Applying AES256-GCM to message text...")
 	auth, err := cipher.NewGCM(AESCipher)
 	if err != nil {
 		panic(err)
@@ -96,12 +101,18 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 
 	// Convert to base64 and place in block
 	out.EncryptedMessage = base64.URLEncoding.EncodeToString(cipherBytes)
+	fmt.Println("Done.\n")
+	fmt.Println("")
 
 	// Select blockparent using blockpool
+	fmt.Println("Selecting block parent...")
 	out.Parent = selectParentHash(out.EncryptedMessage)
+	fmt.Println("Done.\n")
+	fmt.Println("")
 
 	// AES key encryption
 	// First, get current time and add delay factor
+	fmt.Println("Encrypting AES key with RSA...")
 	endpoint = time.Now().Add(constantDelayFactor)
 	// Then actually run encryption
 	cipheredKey, e := rsa.EncryptOAEP(sha3.New512(), rand.Reader, key, AESkey, out.Parent[:])
@@ -116,6 +127,8 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	out.EncryptedKey = base64.URLEncoding.EncodeToString(cipheredKey)
 
 	// Done.
+	fmt.Println("Done.\n")
+	fmt.Println("")
 	return out
 }
 
@@ -196,6 +209,7 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	// First off, we confirm the integrity of the block data
 	// If the blockID doesn't match the hash of the blockdata, then it has been modified
 	// If that occurs, report an error
+	fmt.Println("Verifying hashes...")
 	dataString := StringifyBlockData(block.Data)
 	hasher := sha3.New512()
 	if _, err := hasher.Write([]byte(dataString)); err != nil {
@@ -208,6 +222,8 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 		return "", errors.New("Blockdata hash mismatch: ID " + string(block.ID[:64]) +
 			" is not equal to hash of data " + string(test[:64]))
 	}
+	fmt.Println("Hash of data matches set ID.\n")
+	fmt.Println("")
 	// No data tampering has occurred if we get here...
 	// Or if it has, it caused a collision in SHA3-512, which is insanely unlikely
 
@@ -219,10 +235,11 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	// Thus, we get pseudo-constant time behavior
 	// This time needs to be long enough that decryption of the key and of the
 	//    message will be complete, each in one period, for any (reasonable) message.
-	constantDelayFactor := 5 * time.Millisecond
+	constantDelayFactor := 250 * time.Millisecond
 
 	// First, attempt to decrypt the encryptedKey
 	// First, get our encrypted key as a byte array
+	fmt.Println("Performing RSA decryption of encrypted AES key...")
 	encryptedKeyBytes, er := base64.URLEncoding.DecodeString(block.Data.EncryptedKey)
 	if er != nil {
 		return "", er
@@ -237,8 +254,11 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	if e != nil {
 		return "", e
 	}
+	fmt.Println("Done.\n")
+	fmt.Println("")
 
 	// Now, attempt to use that key to decrypt the encryptedMessage
+	fmt.Println("Performing AES256-GCM decryption of message ciphertext...")
 	AESCipher, err := aes.NewCipher(AESkey)
 	if err != nil {
 		return "", err
@@ -260,6 +280,8 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	if error != nil {
 		return "", error
 	}
+	fmt.Println("Done.\n")
+	fmt.Println("")
 	// And return
 	return string(msg), nil
 }
