@@ -129,6 +129,7 @@ func forwardBlock(block Block) {
 		return 0
 	} else {
 		log.Print("[NET - FORWARDER] Decryption success. Sending message to frontend.")
+		log.Print("[NET - FORWARDER] \n[BEGIN DECRYPTED MESSAGE]\n"+message+"\n[END DECRYPTED MESSAGE]")
 		/*
 		TODO: Send block to frontend function
 		*/
