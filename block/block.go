@@ -8,7 +8,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/gob"
-	"io"
+	"errors"
 	"time"
 
 	"golang.org/x/crypto/sha3"
@@ -19,6 +19,7 @@ type BlockData struct {
 	encryptedMessage string   // AES encrypted message
 	salt             [8]byte  // Random salt
 	parent           [64]byte // Hash of parent block
+	nonce            []byte   // Nonce used for GCM
 }
 
 type Block struct {
@@ -72,18 +73,15 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	if e != nil {
 		panic(e)
 	}
-	// encrypted message bytes
-	cipherBytes := make([]byte, aes.BlockSize+len(message))
+	// AEAD
+	auth, err := cipher.NewGCM(AESCipher)
+	if err != nil {
+		panic(err)
+	}
 	// Initialization Vector
 	// Delivered with ciphertext as it is necessary for decryption...
 	// But it doesn't have to be private to be secure
-	iv := cipherBytes[:aes.BlockSize]
-	// If error reading IV
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		panic(err) // panic!!
-	}
-	// Stream cipher
-	stream := cipher.NewCTR(AESCipher, iv)
+	out.nonce = RandomBytes(auth.NonceSize())
 	// Plaintext bytes
 	plaintext := []byte(message)
 
@@ -91,18 +89,21 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	// First, get current time and add delay factor
 	endpoint := time.Now().Add(constantDelayFactor)
 	// Then actually run encryption
-	stream.XORKeyStream(cipherBytes[aes.BlockSize:], plaintext)
+	cipherBytes := auth.Seal(nil, out.nonce, plaintext, out.salt[:])
 	// Now, delay until we reach endpoint
 	time.Sleep(time.Until(endpoint))
 
 	// Convert to base64 and place in block
 	out.encryptedMessage = base64.URLEncoding.EncodeToString(cipherBytes)
 
+	// Select blockparent using blockpool
+	out.parent = selectParentHash(out.encryptedMessage)
+
 	// AES key encryption
 	// First, get current time and add delay factor
 	endpoint = time.Now().Add(constantDelayFactor)
 	// Then actually run encryption
-	cipheredKey, e := rsa.EncryptOAEP(sha3.New512(), rand.Reader, key, AESkey, nil)
+	cipheredKey, e := rsa.EncryptOAEP(sha3.New512(), rand.Reader, key, AESkey, out.parent[:])
 	// Now, delay until we reach endpoint
 	time.Sleep(time.Until(endpoint))
 
@@ -112,9 +113,6 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	}
 	// Convert to base64 and place in block
 	out.encryptedKey = base64.URLEncoding.EncodeToString(cipheredKey)
-
-	// Select blockparent using blockpool
-	out.parent = selectParentHash(out.encryptedMessage)
 
 	// Done.
 	return out
@@ -179,6 +177,20 @@ func DestringifyBlock(block string) Block {
 
 // Returns the decrypted message from a block with a given PrivateKey
 func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error) {
+	// First off, we confirm the integrity of the block data
+	// If the blockID doesn't match the hash of the blockdata, then it has been modified
+	// If that occurs, report an error
+	dataString := StringifyBlockData(block.data)
+	test := sha3.New512().Sum([]byte(dataString))
+	if !bytes.Equal(test, block.ID[:]) {
+		// The blockdata has been modified!
+		// Error out
+		return "", errors.New("Blockdata hash mismatch: ID " + string(block.ID[:64]) +
+			" is not equal to hash of data " + string(test[:64]))
+	}
+	// No data tampering has occurred if we get here...
+	// Or if it has, it caused a collision in SHA3-512, which is insanely unlikely
+
 	// Controls how long we wait for decryption to complete
 	// Go doesn't perform encryptions in constant-time...
 	// So to prevent timing attacks, we wait after decryption
@@ -198,7 +210,7 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	// Then, get current time and add constant delay factor
 	endpoint := time.Now().Add(constantDelayFactor)
 	// Then actually attempt decryption
-	AESkey, e := key.Decrypt(rand.Reader, encryptedKeyBytes, new(rsa.OAEPOptions))
+	AESkey, e := rsa.DecryptOAEP(sha3.New512(), rand.Reader, key, encryptedKeyBytes, block.data.parent[:])
 	// Now wait until endpoint
 	time.Sleep(time.Until(endpoint))
 	// Return on error
@@ -215,14 +227,19 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	if error != nil {
 		return "", error
 	}
-	stream := cipher.NewCTR(AESCipher, msg[:aes.BlockSize])
-	msg = msg[aes.BlockSize:]
+	auth, er := cipher.NewGCM(AESCipher)
+	if er != nil {
+		return "", er
+	}
 	// First, get current time and add constant delay factor
 	endpoint = time.Now().Add(constantDelayFactor)
 	// Now actually attempt decryption
-	stream.XORKeyStream(msg, msg)
+	msg, error = auth.Open(nil, block.data.nonce, msg, block.data.salt[:])
 	// Now wait until endpoint
 	time.Sleep(time.Until(endpoint))
+	if error != nil {
+		return "", error
+	}
 	// And return
 	return string(msg), nil
 }
