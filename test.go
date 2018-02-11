@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
 	"errors"
 	"fmt"
 
@@ -32,6 +33,7 @@ func main() {
 	reception2 := block.DestringifyBlock(str2)
 
 	if reception1.ID != transmission1.ID || reception2.ID != transmission2.ID {
+		fmt.Printf("T1: %s R1:%s\nT2: %s R2: %s\n", base64.URLEncoding.EncodeToString(transmission1.ID[:64]), base64.URLEncoding.EncodeToString(reception1.ID[:64]), base64.URLEncoding.EncodeToString(transmission2.ID[:64]), base64.URLEncoding.EncodeToString(reception2.ID[:64]))
 		panic(errors.New("ID mismatch"))
 	}
 
