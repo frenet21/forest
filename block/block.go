@@ -122,9 +122,11 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 func StringifyBlockData(data BlockData) string {
 	var buf bytes.Buffer
 	encoder := gob.NewEncoder(&buf)
-	encoder.Encode(data)
-	raw := buf.Bytes()
-	return string(raw[:buf.Len()])
+	err := encoder.Encode(data)
+	if err != nil {
+		panic(err)
+	}
+	return buf.String()
 }
 
 func DestringifyBlockData(data string) BlockData {
@@ -133,7 +135,10 @@ func DestringifyBlockData(data string) BlockData {
 	var buf bytes.Buffer
 	buf.WriteString(data)
 	decoder := gob.NewDecoder(&buf)
-	decoder.Decode(out)
+	err := decoder.Decode(&out)
+	if err != nil {
+		panic(err)
+	}
 
 	return out
 }
@@ -159,9 +164,11 @@ func CreateBlock(message string, key *rsa.PublicKey) Block {
 func StringifyBlock(block Block) string {
 	var buf bytes.Buffer
 	encoder := gob.NewEncoder(&buf)
-	encoder.Encode(block)
-	raw := buf.Bytes()
-	return string(raw[:buf.Len()])
+	err := encoder.Encode(block)
+	if err != nil {
+		panic(err)
+	}
+	return buf.String()
 }
 
 func DestringifyBlock(block string) Block {
@@ -170,7 +177,10 @@ func DestringifyBlock(block string) Block {
 	var buf bytes.Buffer
 	buf.WriteString(block)
 	decoder := gob.NewDecoder(&buf)
-	decoder.Decode(out)
+	err := decoder.Decode(&out)
+	if err != nil {
+		panic(err)
+	}
 
 	return out
 }
