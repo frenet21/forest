@@ -263,9 +263,3 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	// And return
 	return string(msg), nil
 }
-
-// Call on main startup
-func Initialize() {
-	gob.Register(BlockData{})
-	gob.Register(Block{})
-}
