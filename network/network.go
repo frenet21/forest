@@ -8,7 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/stellar-tech/forest/block"
+	"../block"
+	"../pool"
 )
 
 const (
@@ -100,6 +101,9 @@ func acceptBlock(conn net.Conn) {
 // These blocks are sent to everyone on the client list
 // And the decryption attempt function is called here
 func forwardBlock(blk block.Block) {
+	// Give this block to the blockpool
+	pool.ReceiveBlockHash(string(blk.ID[:64]))
+
 	// Open the known client list path
 	file, err := os.Open(KNOWN_CLIENTS_PATH)
 	if err != nil {
