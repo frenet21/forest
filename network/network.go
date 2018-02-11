@@ -19,9 +19,9 @@ const (
 func startServer(done chan bool){
 	ln, err := net.Listen("tcp", LOCAL_SERV_PORT)
 	if err != nil{
-		log.Print("Failed to start the server.")
+		log.Print("[NET - SERVER] Failed to start the server.")
 	} else {
-		log.Print("Server started on" + LOCAL_SERV_ADDR + LOCAL_SERV_PORT)
+		log.Print("[NET - SERVER] Server started on" + LOCAL_SERV_ADDR + LOCAL_SERV_PORT)
 	}
 
 	// Server start is completed
@@ -36,8 +36,7 @@ func startServer(done chan bool){
 
 // Destring block, check block ID against known block list
 // Decide to accept or discard
-// Accepted block is returned to the frontend for storing and later viewing
-
+// Accepted block is passed to forwardBlock function
 func acceptBlock(conn net.Conn) {
 	// Destringify the "conn" string with function from package 'block'
 	Block := block.DestringifyBlock(conn)
@@ -49,28 +48,25 @@ func acceptBlock(conn net.Conn) {
 		// If not, create it...
 		file, err := os.Create(ID_LIST_PATH)
 		if err != nil {
-			log.Print("Failed to create file.")
+			log.Print("[NET - ACCEPTOR] Failed to create file.")
 			return 0
 		} else {
-			log.Print("A new ID list file was created.")
+			log.Print("[NET - ACCEPTOR] A new ID list file was created.")
 		}
 	}
 
 	// Search the known_hash.txt file for the blockID
 	f, err := os.Open(path)
 	if err != nil {
-		log.Print("Could not open the file.")
+		log.Print("[NET - ACCEPTOR] Could not open the file.")
 		return 0
 	}
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		// If it is there, discard the Block and stop this function
 		if strings.Contains(scanner.Text(), blockID) {
-			log.Print("Received block is known. Discarding...")
-			// Discard the block
-			/*
-			TODO: Discard block function
-			*/
+			log.Print("[NET - ACCEPTOR] Received block is known. Discarding...")
+			f.close()
 			return 0
 		}
 		// If it is not, add the block ID to the list 
@@ -88,7 +84,23 @@ func acceptBlock(conn net.Conn) {
 }
 
 
-// After acceptBlock accepts block, and stored for later viewing
-func forwardBlock(Block Block) {
+// acceptBlock function passes OK'd blocks here
+func forwardBlock(block Block) {
 
+	/*
+	TODO: Forward block to rest of network nodes
+	*/
+	
+
+
+	message, err := block.AttemptDecrypt(block, priKey)
+	if err != nil {
+		log.Print("[NET - FORWARDER] Decryption failed. Discarding block.")
+		return 0
+	}
+
+	/*
+	TODO: Send block to frontend here
+	*/
 }
+
