@@ -21,7 +21,7 @@ type Blockpool struct {
 var blockpool Blockpool // Blockpool singleton
 
 // Returns the genesis pool, after setting the global pool to genesis
-func genesisPool() Blockpool {
+func GenesisPool() Blockpool {
 	var genesis Blockpool
 
 	hasher := sha3.New512()
@@ -37,7 +37,7 @@ func genesisPool() Blockpool {
 }
 
 // Adds a new hash to the blockpool's receive queue
-func receiveBlockHash(hash string) {
+func ReceiveBlockHash(hash string) {
 	entry := HashDate{hash, time.Now()}
 	blockpool.queue = append(blockpool.queue, entry)
 }
@@ -62,7 +62,7 @@ func updateBlockpool() {
 }
 
 // Selects a block parent based on the encrypted message
-func selectParentHash(encryptedMessage string) string {
+func SelectParentHash(encryptedMessage string) string {
 	updateBlockpool()
 
 	//Add hash of encrypted message to the end of the blockpool array

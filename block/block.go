@@ -45,10 +45,7 @@ func RandomBytes(n int) []byte {
 
 // Selects a block parent based on the encrypted message
 func selectParentHash(encryptedMessage string) [64]byte {
-	// TODO: Connect this to the blockpool
-	var out [64]byte
-	copy(out[:], sha3.New512().Sum(RandomBytes(32))[:64])
-	return out
+	return ([]byte(pool.selectParentHash(encryptedMessage)))[:64]
 }
 
 func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
