@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/gob"
 	"io"
+	"time"
 
 	"golang.org/x/crypto/sha3"
 )
@@ -32,7 +33,10 @@ type Block struct {
 // Returns n random bytes
 func RandomBytes(n int) []byte {
 	out := make([]byte, n)
-	rand.Read(out)
+	_, err := rand.Read(out)
+	if err != nil {
+		panic(err)
+	}
 	return out
 }
 
@@ -46,6 +50,16 @@ func selectParentHash(encryptedMessage string) [64]byte {
 
 func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	var out BlockData
+
+	// Controls how long we wait for encryption to complete
+	// Go doesn't perform encryptions in constant-time...
+	// So to prevent timing attacks, we wait after encryption
+	// The time is taken before running the encryption, and then after encrypt
+	//    we wait until that much time has elapsed
+	// Thus, we get pseudo-constant time behavior
+	// This time needs to be long enough that encryption of the key and of the
+	//    message will be complete, each in one period, for any (reasonable) message.
+	constantDelayFactor := 500 * time.Millisecond
 
 	// Block salt
 	copy(out.salt[:], RandomBytes(8)[:8])
@@ -72,13 +86,26 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	stream := cipher.NewCTR(AESCipher, iv)
 	// Plaintext bytes
 	plaintext := []byte(message)
+
 	// Encryption
+	// First, get current time and add delay factor
+	endpoint := time.Now().Add(constantDelayFactor)
+	// Then actually run encryption
 	stream.XORKeyStream(cipherBytes[aes.BlockSize:], plaintext)
+	// Now, delay until we reach endpoint
+	time.Sleep(time.Until(endpoint))
+
 	// Convert to base64 and place in block
 	out.encryptedMessage = base64.URLEncoding.EncodeToString(cipherBytes)
 
 	// AES key encryption
+	// First, get current time and add delay factor
+	endpoint = time.Now().Add(constantDelayFactor)
+	// Then actually run encryption
 	cipheredKey, e := rsa.EncryptOAEP(sha3.New512(), rand.Reader, key, AESkey, nil)
+	// Now, delay until we reach endpoint
+	time.Sleep(time.Until(endpoint))
+
 	// Panic on error
 	if e != nil {
 		panic(e)
@@ -117,6 +144,8 @@ func CreateBlock(message string, key *rsa.PublicKey) Block {
 	var out Block
 
 	// Block data
+	// This is where encryption is done...
+	// Constant factor delay?
 	out.data = CreateBlockData(message, key)
 
 	// Block ID
@@ -146,6 +175,56 @@ func DestringifyBlock(block string) Block {
 	decoder.Decode(out)
 
 	return out
+}
+
+// Returns the decrypted message from a block with a given PrivateKey
+func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error) {
+	// Controls how long we wait for decryption to complete
+	// Go doesn't perform encryptions in constant-time...
+	// So to prevent timing attacks, we wait after decryption
+	// The time is taken before running the decryption, and then after encrypt
+	//    we wait until that much time has elapsed
+	// Thus, we get pseudo-constant time behavior
+	// This time needs to be long enough that decryption of the key and of the
+	//    message will be complete, each in one period, for any (reasonable) message.
+	constantDelayFactor := 500 * time.Millisecond
+
+	// First, attempt to decrypt the encryptedKey
+	// First, get our encrypted key as a byte array
+	encryptedKeyBytes, er := base64.URLEncoding.DecodeString(block.data.encryptedKey)
+	if er != nil {
+		return "", er
+	}
+	// Then, get current time and add constant delay factor
+	endpoint := time.Now().Add(constantDelayFactor)
+	// Then actually attempt decryption
+	AESkey, e := key.Decrypt(rand.Reader, encryptedKeyBytes, new(rsa.OAEPOptions))
+	// Now wait until endpoint
+	time.Sleep(time.Until(endpoint))
+	// Return on error
+	if e != nil {
+		return "", e
+	}
+
+	// Now, attempt to use that key to decrypt the encryptedMessage
+	AESCipher, err := aes.NewCipher(AESkey)
+	if err != nil {
+		return "", err
+	}
+	msg, error := base64.URLEncoding.DecodeString(block.data.encryptedMessage)
+	if error != nil {
+		return "", error
+	}
+	stream := cipher.NewCTR(AESCipher, msg[:aes.BlockSize])
+	msg = msg[aes.BlockSize:]
+	// First, get current time and add constant delay factor
+	endpoint = time.Now().Add(constantDelayFactor)
+	// Now actually attempt decryption
+	stream.XORKeyStream(msg, msg)
+	// Now wait until endpoint
+	time.Sleep(time.Until(endpoint))
+	// And return
+	return string(msg), nil
 }
 
 // Call on main startup
