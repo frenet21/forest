@@ -6,9 +6,12 @@ import (
 	"fmt"
 
 	"./block"
+	"./pool"
 )
 
 func main() {
+	pool.GenesisPool()
+
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
 		panic(err)
