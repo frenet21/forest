@@ -104,3 +104,10 @@ func storeAPublicKey(publicKey string, userName string) {
 	fmt.Printf("wrote %d into the file.\n", li)
 
 }
+
+func receiveMessage(message string) {
+	fmt.Println("")
+	fmt.Println("Incoming message:")
+	fmt.Println(message)
+	fmt.Println("")
+}
