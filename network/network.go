@@ -51,7 +51,14 @@ func startServer(done chan bool) {
 // Accepted block is passed to forwardBlock function
 func acceptBlock(conn net.Conn) {
 	// Destringify the "conn" string with function from package 'block'
-	Block := block.DestringifyBlock(conn)
+	var blockbytes []byte
+	var len int
+	if n, err := conn.Read(blockbytes); err != nil {
+		panic(err)
+	} else {
+		len = n
+	}
+	Block := block.DestringifyBlock(string(blockbytes[:len]))
 	// Select the block ID from the Block
 	blockID := string(Block.ID[:64])
 
@@ -76,7 +83,7 @@ func acceptBlock(conn net.Conn) {
 		// If it is there, discard the Block and stop this function
 		if strings.Contains(scanner.Text(), blockID) {
 			log.Print("[NET - ACCEPTOR] Received block is known. Discarding...")
-			f.close()
+			f.Close()
 		} else {
 			log.Print("[NET - ACCEPTOR] New block ID identified. Adding to list...")
 			f, err := os.OpenFile(ID_LIST_PATH, os.O_APPEND|os.O_WRONLY, 0644)
@@ -86,14 +93,13 @@ func acceptBlock(conn net.Conn) {
 			// Pass block to forwardBlock function
 			forwardBlock(Block)
 		}
-		line++
 	}
 }
 
 // acceptBlock function passes OK'd blocks here
 // These blocks are sent to everyone on the client list
 // And the decryption attempt function is called here
-func forwardBlock(block block.Block) {
+func forwardBlock(blk block.Block) {
 	// Open the known client list path
 	file, err := os.Open(KNOWN_CLIENTS_PATH)
 	if err != nil {
@@ -110,7 +116,7 @@ func forwardBlock(block block.Block) {
 		fmt.Println(scanner.Text())
 		sendAddress := scanner.Text()
 		// Send block and the read address to sendBlock function
-		sendBlock(block, sendAddress)
+		sendBlock(blk, sendAddress)
 	}
 	if err != nil {
 		log.Print("[NET - FORWARDER] Failed to read opened client list.")
@@ -121,7 +127,7 @@ func forwardBlock(block block.Block) {
 	*/
 
 	// Attempt a decryption of the received block after passing to known clients
-	message, err := block.AttemptDecrypt(block, priKey)
+	message, err := block.AttemptDecrypt(blk, priKey)
 	if err != nil {
 		log.Print("[NET - FORWARDER] Decryption failed. Discarding block.")
 	} else {
@@ -135,7 +141,7 @@ func forwardBlock(block block.Block) {
 
 // Send a block to a given address.
 // Important note: sendAddress should be stored as IP:PORT
-func sendBlock(block block.Block, sendAddress string) {
+func sendBlock(blk block.Block, sendAddress string) {
 	log.Print("[NET - SENDER] Dialing " + sendAddress + "... ")
 	// Translate the address string to a dialable TCP address
 	tcpAddr, err := net.ResolveTCPAddr("tcp", sendAddress)
@@ -146,5 +152,5 @@ func sendBlock(block block.Block, sendAddress string) {
 	}
 
 	// Send block to socket
-	fmt.Fprintf(conn, block)
+	conn.Write([]byte(block.StringifyBlock(blk)))
 }
