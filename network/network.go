@@ -1,10 +1,11 @@
 package network
 
 import (
-	"net"
-	"log"
-	"os"
 	"encoding/gob"
+	"log"
+	"net"
+	"os"
+	
 	"github.com/stellar-tech/forest/block"
 )
 
