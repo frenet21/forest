@@ -96,3 +96,13 @@ func StringifyBlockpool() string {
 	raw := buf.Bytes()
 	return string(raw[:buf.Len()])
 }
+
+// Returns the blockpool after assigning it
+func DestringifyBlockpool(pool string) Blockpool {
+	var buf bytes.Buffer
+	buf.WriteString(pool)
+	decoder := gob.NewDecoder(&buf)
+	decoder.Decode(blockpool)
+
+	return blockpool
+}
