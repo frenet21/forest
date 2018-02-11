@@ -1,6 +1,8 @@
 package pool
 
 import (
+	"bytes"
+	"encoding/gob"
 	"sort"
 	"strings"
 	"time"
@@ -85,4 +87,12 @@ func SelectParentHash(encryptedMessage string) string {
 
 	//return parent hash
 	return blockpoolStrings[element]
+}
+
+func StringifyBlockpool() string {
+	var buf bytes.Buffer
+	encoder := gob.NewEncoder(&buf)
+	encoder.Encode(blockpool)
+	raw := buf.Bytes()
+	return string(raw[:buf.Len()])
 }
