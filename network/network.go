@@ -18,11 +18,11 @@ const (
 )
 
 /*
-startServer() - Starts the listener on the address. Starts acceptBlock() as a goroutine.
-acceptBlock() - Receives blocks, destrings, accepts/drops based on the known hash list.
-fowardBlock() - Loops the client list, firing off sendBlock(), then sends block to the frontend.
-				Clients sending messages will simply pass them into this function.
-sendBlock()	-	Sends a given block to an address (IP:PORT)
+startServer() 	- 	Starts the listener on the address. Starts acceptBlock() as a goroutine.
+acceptBlock() 	- 	Receives blocks, destrings, accepts/drops based on the known hash list.
+fowardBlock() 	- 	Loops the client list, firing off sendBlock(), then sends block to the frontend. 
+					Clients sending messages will simply pass them into this function.
+sendBlock()		-	Sends a given block to an address (IP:PORT)
 */
 
 
@@ -112,6 +112,7 @@ func forwardBlock(block Block) {
 	for scanner.Scan() {
 		fmt.Println(scanner.Text())
 		sendAddress := scanner.Text()
+		// Send block and the read address to sendBlock function
 		sendBlock(block, sendAddress)
 	}
 	if err != nil {
