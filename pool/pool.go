@@ -16,7 +16,7 @@ type HashDate struct {
 }
 
 type Blockpool struct {
-	hashes [1000]string
+	Hashes [1000]string
 	queue  []HashDate
 }
 
@@ -28,10 +28,10 @@ func GenesisPool() Blockpool {
 
 	hasher := sha3.New512()
 
-	for i := 0; i < len(genesis.hashes); i++ {
+	for i := 0; i < len(genesis.Hashes); i++ {
 		block := make([]byte, 1)
 		block[0] = byte(i)
-		genesis.hashes[i] = string(hasher.Sum(block)[:64])
+		genesis.Hashes[i] = string(hasher.Sum(block)[:64])
 	}
 
 	blockpool = genesis
@@ -60,7 +60,7 @@ func updateBlockpool() {
 	for i := 0; i < len(pairs); i++ {
 		hashes[i] = pairs[i].hash
 	}
-	copy(blockpool.hashes[:], append(hashes, blockpool.hashes[:firstOld]...)[:1000])
+	copy(blockpool.Hashes[:], append(hashes, blockpool.Hashes[:firstOld]...)[:1000])
 }
 
 // Selects a block parent based on the encrypted message
@@ -69,7 +69,7 @@ func SelectParentHash(encryptedMessage string) string {
 
 	//Add hash of encrypted message to the end of the blockpool array
 	hash := string(sha3.New512().Sum([]byte(encryptedMessage))[:64])
-	blockpoolStrings := append(blockpool.hashes[:], hash)
+	blockpoolStrings := append(blockpool.Hashes[:], hash)
 
 	//Sorted blockpool strings
 	sort.Strings(blockpoolStrings)
