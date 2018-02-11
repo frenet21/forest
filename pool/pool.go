@@ -86,7 +86,3 @@ func selectParentHash(encryptedMessage string) string {
 	//return parent hash
 	return blockpoolStrings[element]
 }
-
-func main() {
-
-}
