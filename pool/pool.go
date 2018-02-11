@@ -19,9 +19,7 @@ func selectParentHash(info encryptedMessageAndHash) string {
 	blockpoolStrings := append(info.blockpool, hash)
 
 	//Sorted blockpool strings
-	fmt.Println(blockpoolStrings)
 	sort.Strings(blockpoolStrings)
-	fmt.Println(blockpoolStrings)
 
 	var element int
 
@@ -33,8 +31,6 @@ func selectParentHash(info encryptedMessageAndHash) string {
 			}
 		}
 	}
-
-	fmt.Println(element)
 
 	//return parent hash
 	return blockpoolStrings[element]
