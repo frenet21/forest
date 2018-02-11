@@ -45,7 +45,9 @@ func RandomBytes(n int) []byte {
 
 // Selects a block parent based on the encrypted message
 func selectParentHash(encryptedMessage string) [64]byte {
-	return ([]byte(pool.selectParentHash(encryptedMessage)))[:64]
+	out := [64]byte{}
+	copy(out[:], ([]byte(pool.SelectParentHash(encryptedMessage)))[:64])
+	return out
 }
 
 func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
