@@ -18,9 +18,9 @@ type Blockpool struct {
 	queue  []HashDate
 }
 
-var blockpool Blockpool // Blockpool singleton, usually(?)
+var blockpool Blockpool // Blockpool singleton
 
-// Returns the genesis pool
+// Returns the genesis pool, after setting the global pool to genesis
 func genesisPool() Blockpool {
 	var genesis Blockpool
 
@@ -32,14 +32,20 @@ func genesisPool() Blockpool {
 		genesis.hashes[i] = string(hasher.Sum(block)[:64])
 	}
 
-	return genesis
+	blockpool=genesis
+}
+
+// Adds a new hash to the blockpool's receive queue
+func receiveBlockHash(hash string) {
+	entry := HashDate{hash, time.Now()}
+	blockpool.queue := append(blockpool.queue, entry)
 }
 
 // Selects a block parent based on the encrypted message
-func selectParentHash(encryptedMessage string, pool Blockpool) string {
+func selectParentHash(encryptedMessage string) string {
 	//Add hash of encrypted message to the end of the blockpool array
 	hash := string(sha3.New512().Sum([]byte(encryptedMessage))[:64])
-	blockpoolStrings := append(pool.hashes[:], hash)
+	blockpoolStrings := append(blockpool.hashes[:], hash)
 
 	//Sorted blockpool strings
 	sort.Strings(blockpoolStrings)
