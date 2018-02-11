@@ -197,17 +197,12 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	// If the blockID doesn't match the hash of the blockdata, then it has been modified
 	// If that occurs, report an error
 	dataString := StringifyBlockData(block.Data)
-<<<<<<< HEAD
-	test := sha3.New512().Sum([]byte(dataString))
-	if false && !bytes.Equal(test, block.ID[:]) {
-=======
 	hasher := sha3.New512()
 	if _, err := hasher.Write([]byte(dataString)); err != nil {
 		return "", err
 	}
 	test := hasher.Sum(nil)
 	if !bytes.Equal(test, block.ID[:]) {
->>>>>>> blocks
 		// The blockdata has been modified!
 		// Error out
 		return "", errors.New("Blockdata hash mismatch: ID " + string(block.ID[:64]) +
