@@ -31,7 +31,9 @@ func GenesisPool() Blockpool {
 	for i := 0; i < len(genesis.Hashes); i++ {
 		block := make([]byte, 1)
 		block[0] = byte(i)
-		genesis.Hashes[i] = string(hasher.Sum(block)[:64])
+		hasher.Write(block)
+		genesis.Hashes[i] = string(hasher.Sum(nil)[:64])
+		hasher.Reset()
 	}
 
 	blockpool = genesis
@@ -68,7 +70,9 @@ func SelectParentHash(encryptedMessage string) string {
 	updateBlockpool()
 
 	//Add hash of encrypted message to the end of the blockpool array
-	hash := string(sha3.New512().Sum([]byte(encryptedMessage))[:64])
+	hasher := sha3.New512()
+	hasher.Write([]byte(encryptedMessage))
+	hash := string(hasher.Sum(nil)[:64])
 	blockpoolStrings := append(blockpool.Hashes[:], hash)
 
 	//Sorted blockpool strings
