@@ -92,9 +92,11 @@ func SelectParentHash(encryptedMessage string) string {
 func StringifyBlockpool() string {
 	var buf bytes.Buffer
 	encoder := gob.NewEncoder(&buf)
-	encoder.Encode(blockpool)
-	raw := buf.Bytes()
-	return string(raw[:buf.Len()])
+	err := encoder.Encode(blockpool)
+	if err != nil {
+		panic(err)
+	}
+	return buf.String()
 }
 
 // Returns the blockpool after assigning it
@@ -102,7 +104,10 @@ func DestringifyBlockpool(pool string) Blockpool {
 	var buf bytes.Buffer
 	buf.WriteString(pool)
 	decoder := gob.NewDecoder(&buf)
-	decoder.Decode(blockpool)
+	err := decoder.Decode(blockpool)
+	if err != nil {
+		panic(err)
+	}
 
 	return blockpool
 }
