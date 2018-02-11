@@ -96,11 +96,14 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	// Convert to base64 and place in block
 	out.encryptedMessage = base64.URLEncoding.EncodeToString(cipherBytes)
 
+	// Select blockparent using blockpool
+	out.parent = selectParentHash(out.encryptedMessage)
+
 	// AES key encryption
 	// First, get current time and add delay factor
 	endpoint = time.Now().Add(constantDelayFactor)
 	// Then actually run encryption
-	cipheredKey, e := rsa.EncryptOAEP(sha3.New512(), rand.Reader, key, AESkey, nil)
+	cipheredKey, e := rsa.EncryptOAEP(sha3.New512(), rand.Reader, key, AESkey, out.parent[:])
 	// Now, delay until we reach endpoint
 	time.Sleep(time.Until(endpoint))
 
@@ -110,9 +113,6 @@ func CreateBlockData(message string, key *rsa.PublicKey) BlockData {
 	}
 	// Convert to base64 and place in block
 	out.encryptedKey = base64.URLEncoding.EncodeToString(cipheredKey)
-
-	// Select blockparent using blockpool
-	out.parent = selectParentHash(out.encryptedMessage)
 
 	// Done.
 	return out
@@ -210,7 +210,7 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	// Then, get current time and add constant delay factor
 	endpoint := time.Now().Add(constantDelayFactor)
 	// Then actually attempt decryption
-	AESkey, e := rsa.DecryptOAEP(sha3.New512(), rand.Reader, key, encryptedKeyBytes, nil)
+	AESkey, e := rsa.DecryptOAEP(sha3.New512(), rand.Reader, key, encryptedKeyBytes, block.data.parent[:])
 	// Now wait until endpoint
 	time.Sleep(time.Until(endpoint))
 	// Return on error
