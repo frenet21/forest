@@ -32,13 +32,33 @@ func genesisPool() Blockpool {
 		genesis.hashes[i] = string(hasher.Sum(block)[:64])
 	}
 
-	blockpool=genesis
+	blockpool = genesis
+	return genesis
 }
 
 // Adds a new hash to the blockpool's receive queue
 func receiveBlockHash(hash string) {
 	entry := HashDate{hash, time.Now()}
-	blockpool.queue := append(blockpool.queue, entry)
+	blockpool.queue = append(blockpool.queue, entry)
+}
+
+func updateBlockpool() {
+	firstOld := -1
+	for i := 0; i < len(blockpool.queue); i++ {
+		if time.Since(blockpool.queue[i].sent) > time.Hour {
+			firstOld = i
+			break
+		}
+	}
+	if firstOld == -1 {
+		return
+	}
+	pairs := blockpool.queue[firstOld:]
+	hashes := make([]string, len(pairs))
+	for i := 0; i < len(pairs); i++ {
+		hashes[i] = pairs[i].hash
+	}
+	copy(blockpool.hashes[:], append(hashes, blockpool.hashes[:firstOld]...)[:1000])
 }
 
 // Selects a block parent based on the encrypted message
