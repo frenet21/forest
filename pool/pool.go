@@ -20,6 +20,7 @@ type Blockpool struct {
 
 var blockpool Blockpool // Blockpool singleton, usually(?)
 
+// Returns the genesis pool
 func genesisPool() Blockpool {
 	var genesis Blockpool
 
