@@ -14,7 +14,7 @@ const (
 	KNOWN_CLIENTS_PATH = "/network/KNOWN_CLIENTS.txt"
 	LOCAL_SERV_ADDR = "localhost"
 	LOCAL_SERV_PORT = ":50123"
-	RECEIVER_PORT = c":50123"
+	RECEIVER_PORT = ":50123"
 )
 
 /*
@@ -78,15 +78,14 @@ func acceptBlock(conn net.Conn) {
 		if strings.Contains(scanner.Text(), blockID) {
 			log.Print("[NET - ACCEPTOR] Received block is known. Discarding...")
 			f.close()
-			return 0
 		} else {
+			log.Print("[NET - ACCEPTOR] New block ID identified. Adding to list...")
 			f, err := os.OpenFile(ID_LIST_PATH, os.O_APPEND|os.O_WRONLY, 0644) 
 			n, err := f.WriteString(blockID) 
 			f.Close()
 
 			// Pass block to forwardBlock function
 			forwardBlock(Block)
-			return 0
 		}
 		line++
 	}
