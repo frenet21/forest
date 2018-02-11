@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 	"encoding/gob"
-	"forest/block"
+	"github.com/stellar-tech/forest/block"
 )
 
 const (
@@ -13,7 +13,17 @@ const (
 	KNOWN_CLIENTS_PATH = "/network/KNOWN_CLIENTS.txt"
 	LOCAL_SERV_ADDR = "localhost"
 	LOCAL_SERV_PORT = ":50123"
+	RECEIVER_PORT = c":50123"
 )
+
+/*
+startServer() - Starts the listener on the address. Starts acceptBlock() as a goroutine.
+acceptBlock() - Receives blocks, destrings, accepts/drops based on the known hash list.
+fowardBlock() - Loops the client list, firing off sendBlock(), then sends block to the frontend.
+				Clients sending messages will simply pass them into this function.
+sendBlock()	-	Sends a given block to an address (IP:PORT)
+*/
+
 
 // Start the server with the given address and port
 func startServer(done chan bool){
@@ -44,16 +54,16 @@ func acceptBlock(conn net.Conn) {
 	blockID := Block.ID
 
 	// Check if the known hash text file exists
-	if _, err := os.Stat(ID_LIST_PATH) {
-		// If not, create it...
+	_, err := os.Stat(ID_LIST_PATH)
+	if err != nil {
 		file, err := os.Create(ID_LIST_PATH)
 		if err != nil {
 			log.Print("[NET - ACCEPTOR] Failed to create file.")
-			return 0
 		} else {
 			log.Print("[NET - ACCEPTOR] A new ID list file was created.")
 		}
 	}
+
 
 	// Search the known_hash.txt file for the blockID
 	f, err := os.Open(path)
@@ -68,9 +78,7 @@ func acceptBlock(conn net.Conn) {
 			log.Print("[NET - ACCEPTOR] Received block is known. Discarding...")
 			f.close()
 			return 0
-		}
-		// If it is not, add the block ID to the list 
-		else {
+		} else {
 			f, err := os.OpenFile(ID_LIST_PATH, os.O_APPEND|os.O_WRONLY, 0644) 
 			n, err := f.WriteString(blockID) 
 			f.Close()
@@ -109,6 +117,10 @@ func forwardBlock(block Block) {
 		log.Print("[NET - FORWARDER] Failed to read opened client list.")
 	}
 
+	/*
+	TODO: Loop through files or entries of private keys
+	*/
+
 	// Attempt a decryption of the received block after passing to known clients
 	message, err := block.AttemptDecrypt(block, priKey)
 	if err != nil {
@@ -120,4 +132,21 @@ func forwardBlock(block Block) {
 		TODO: Send block to frontend function
 		*/
 	}
+}
+
+// Send a block to a given address.
+// Important note: sendAddress should be stored as IP:PORT
+func sendBlock(block Block, sendAddress string) {
+	log.Print("[NET - SENDER] Dialing " + sendAddress + "... ")
+	// Translate the address string to a dialable TCP address
+	tcpAddr, err := net.ResolveTCPAddr("tcp", sendAddress)
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	// Skip attempted send if address dial fails.
+	if err != nil {
+		log.Print("[NET - SENDER] Failed dialing " + sendAddress + ". Skipping.")
+		return 0
+	} 
+
+	// Send block to socket
+	fmt.Fprintf(conn, block)
 }
