@@ -3,6 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
+	"bufio"
+	"strings"
+	"reflect"
+	"strconv"
 )
 
 func main(){
@@ -16,27 +20,31 @@ func main(){
 		fmt.Printf("2. Store a public key;\n")
 		fmt.Printf("3. Exit Forest. \n")
 
-		fmt.Print("★★★(Enter any number of options above)\n>>")
+		
 
 		//get input order from user
-		var order int
-		fmt.Scan(&order)
-
+		reader := bufio.NewReader(os.Stdin)
+    	fmt.Print("★★★(Enter any char of options above)\n>>")
+		order, _ := reader.ReadString('\n')
+		order = strings.TrimSuffix(order, "\n")
+		fmt.Print(order)
+		fmt.Println(reflect.TypeOf(order))
+		orderInt,_ := strconv.Atoi(order)
 		//fmt.Println(reflect.TypeOf(order))
 
-		switch order {
+		switch orderInt {
 		case 1:
 			fmt.Printf("You entered 1\n")
 			newM()
 	
 		case 2: 	
+			reader2 := bufio.NewReader(os.Stdin)	
 			fmt.Printf("You entered 2\n")
 			fmt.Print("Enter the public key you want to store: \n>>")
-			var pubKey string
-			fmt.Scan(&pubKey)
+			pubKey, _ := reader2.ReadString('\n')
+			pubKey = strings.TrimSuffix(pubKey, "\n")
 			fmt.Print("Enter the name of this public key: \n>>")
-			var uName string
-			fmt.Scan(&uName)
+			uName, _ := reader2.ReadString('\n')
 			fmt.Print("The public key you entered is: "+pubKey+", the name you entered is: "+uName+"\n")
 			storeAPublicKey(pubKey, uName)
 	
