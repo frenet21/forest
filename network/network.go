@@ -7,38 +7,37 @@ import (
 	"net"
 	"os"
 	"strings"
-	
-	"github.com/stellar-tech/forest/block"
+
+	"../block"
 )
 
 const (
-	ID_LIST_PATH = "BLOCK_ID_LIST.txt"
+	ID_LIST_PATH       = "BLOCK_ID_LIST.txt"
 	KNOWN_CLIENTS_PATH = "KNOWN_CLIENTS.txt"
-	LOCAL_SERV_ADDR = "localhost"
-	LOCAL_SERV_PORT = ":50123"
-	RECEIVER_PORT = ":50123"
+	LOCAL_SERV_ADDR    = "localhost"
+	LOCAL_SERV_PORT    = ":50123"
+	RECEIVER_PORT      = ":50123"
 )
 
 /*
 startServer() 	- 	Starts the listener on the address. Starts acceptBlock() as a goroutine.
 acceptBlock() 	- 	Receives blocks, destrings, accepts/drops based on the known hash list.
-fowardBlock() 	- 	Loops the client list, firing off sendBlock(), then sends block to the frontend. 
+fowardBlock() 	- 	Loops the client list, firing off sendBlock(), then sends block to the frontend.
 					Clients sending messages will simply pass them into this function.
 sendBlock()		-	Sends a given block to an address (IP:PORT)
 */
 
-
 // Start the server with the given address and port
-func startServer(done chan bool){
+func startServer(done chan bool) {
 	ln, err := net.Listen("tcp", LOCAL_SERV_PORT)
-	if err != nil{
+	if err != nil {
 		log.Print("[NET - SERVER] Failed to start the server.")
 	} else {
 		log.Print("[NET - SERVER] Server started on" + LOCAL_SERV_ADDR + LOCAL_SERV_PORT)
 	}
 
 	// Server start is completed
-	done<-true
+	done <- true
 
 	// Start function goroutine to accept connection
 	for {
@@ -67,7 +66,6 @@ func acceptBlock(conn net.Conn) {
 		}
 	}
 
-
 	// Search the known_hash.txt file for the blockID
 	f, err := os.Open(ID_LIST_PATH)
 	if err != nil {
@@ -81,8 +79,8 @@ func acceptBlock(conn net.Conn) {
 			f.close()
 		} else {
 			log.Print("[NET - ACCEPTOR] New block ID identified. Adding to list...")
-			f, err := os.OpenFile(ID_LIST_PATH, os.O_APPEND|os.O_WRONLY, 0644) 
-			n, err := f.WriteString(blockID) 
+			f, err := os.OpenFile(ID_LIST_PATH, os.O_APPEND|os.O_WRONLY, 0644)
+			n, err := f.WriteString(blockID)
 			f.Close()
 
 			// Pass block to forwardBlock function
@@ -91,7 +89,6 @@ func acceptBlock(conn net.Conn) {
 		line++
 	}
 }
-
 
 // acceptBlock function passes OK'd blocks here
 // These blocks are sent to everyone on the client list
@@ -120,7 +117,7 @@ func forwardBlock(block block.Block) {
 	}
 
 	/*
-	TODO: Loop through files or entries of private keys
+		TODO: Loop through files or entries of private keys
 	*/
 
 	// Attempt a decryption of the received block after passing to known clients
@@ -129,9 +126,9 @@ func forwardBlock(block block.Block) {
 		log.Print("[NET - FORWARDER] Decryption failed. Discarding block.")
 	} else {
 		log.Print("[NET - FORWARDER] Decryption success. Sending message to frontend.")
-		log.Print("[NET - FORWARDER] \n[BEGIN DECRYPTED MESSAGE]\n"+message+"\n[END DECRYPTED MESSAGE]")
+		log.Print("[NET - FORWARDER] \n[BEGIN DECRYPTED MESSAGE]\n" + message + "\n[END DECRYPTED MESSAGE]")
 		/*
-		TODO: Send block to frontend function
+			TODO: Send block to frontend function
 		*/
 	}
 }
@@ -146,7 +143,7 @@ func sendBlock(block block.Block, sendAddress string) {
 	// Skip attempted send if address dial fails.
 	if err != nil {
 		log.Print("[NET - SENDER] Failed dialing " + sendAddress + ". Skipping.")
-	} 
+	}
 
 	// Send block to socket
 	fmt.Fprintf(conn, block)
