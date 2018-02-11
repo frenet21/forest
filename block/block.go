@@ -190,13 +190,14 @@ func AttemptDecrypt(block Block, key *rsa.PrivateKey) (message string, err error
 	constantDelayFactor := 500 * time.Millisecond
 
 	// First, attempt to decrypt the encryptedKey
-	// First, get current time and add constant delay factor
-	endpoint := time.Now().Add(constantDelayFactor)
-	// Then actually attempt decryption
+	// First, get our encrypted key as a byte array
 	encryptedKeyBytes, er := base64.URLEncoding.DecodeString(block.data.encryptedKey)
 	if er != nil {
 		return "", er
 	}
+	// Then, get current time and add constant delay factor
+	endpoint := time.Now().Add(constantDelayFactor)
+	// Then actually attempt decryption
 	AESkey, e := key.Decrypt(rand.Reader, encryptedKeyBytes, new(rsa.OAEPOptions))
 	// Now wait until endpoint
 	time.Sleep(time.Until(endpoint))
