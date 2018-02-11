@@ -12,6 +12,8 @@ import (
 )
 
 func main() {
+	fmt.Println("Initializing....")
+
 	pool.GenesisPool()
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
@@ -19,6 +21,8 @@ func main() {
 		panic(err)
 	}
 	publicKey := privateKey.PublicKey
+
+	fmt.Println("Done.\n")
 
 	for true {
 		fmt.Println("Please enter a message:")
