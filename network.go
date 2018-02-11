@@ -1,4 +1,4 @@
-package network
+package main
 
 import (
 	"bufio"
@@ -8,8 +8,6 @@ import (
 	"os"
 	"strings"
 
-	"../block"
-	"../pool"
 )
 
 const (
@@ -59,7 +57,7 @@ func acceptBlock(conn net.Conn) {
 	} else {
 		len = n
 	}
-	Block := block.DestringifyBlock(string(blockbytes[:len]))
+	Block := DestringifyBlock(string(blockbytes[:len]))
 	// Select the block ID from the Block
 	blockID := string(Block.ID[:64])
 
@@ -100,9 +98,9 @@ func acceptBlock(conn net.Conn) {
 // acceptBlock function passes OK'd blocks here
 // These blocks are sent to everyone on the client list
 // And the decryption attempt function is called here
-func forwardBlock(blk block.Block) {
+func forwardBlock(blk Block) {
 	// Give this block to the blockpool
-	pool.ReceiveBlockHash(string(blk.ID[:64]))
+	ReceiveBlockHash(string(blk.ID[:64]))
 
 	// Open the known client list path
 	file, err := os.Open(KNOWN_CLIENTS_PATH)
@@ -131,7 +129,7 @@ func forwardBlock(blk block.Block) {
 	*/
 
 	// Attempt a decryption of the received block after passing to known clients
-	message, err := block.AttemptDecrypt(blk, priKey)
+	message, err := AttemptDecrypt(blk, priKey)
 	if err != nil {
 		log.Print("[NET - FORWARDER] Decryption failed. Discarding block.")
 	} else {
@@ -140,12 +138,13 @@ func forwardBlock(blk block.Block) {
 		/*
 			TODO: Send block to frontend function
 		*/
+
 	}
 }
 
 // Send a block to a given address.
 // Important note: sendAddress should be stored as IP:PORT
-func sendBlock(blk block.Block, sendAddress string) {
+func sendBlock(blk Block, sendAddress string) {
 	log.Print("[NET - SENDER] Dialing " + sendAddress + "... ")
 	// Translate the address string to a dialable TCP address
 	tcpAddr, err := net.ResolveTCPAddr("tcp", sendAddress)
@@ -156,5 +155,5 @@ func sendBlock(blk block.Block, sendAddress string) {
 	}
 
 	// Send block to socket
-	conn.Write([]byte(block.StringifyBlock(blk)))
+	conn.Write([]byte(StringifyBlock(blk)))
 }

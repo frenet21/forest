@@ -1,4 +1,4 @@
-package block
+package main
 
 import (
 	"bytes"
@@ -10,8 +10,6 @@ import (
 	"encoding/gob"
 	"errors"
 	"time"
-
-	"../pool"
 
 	"golang.org/x/crypto/sha3"
 )
@@ -46,7 +44,7 @@ func RandomBytes(n int) []byte {
 // Selects a block parent based on the encrypted message
 func selectParentHash(encryptedMessage string) [64]byte {
 	out := [64]byte{}
-	copy(out[:], ([]byte(pool.SelectParentHash(encryptedMessage)))[:64])
+	copy(out[:], ([]byte(SelectParentHash(encryptedMessage)))[:64])
 	return out
 }
 

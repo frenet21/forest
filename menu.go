@@ -8,15 +8,12 @@ import (
 	"strconv"
 	"strings"
 
-	"../block"
-	"../network"
-	"../pool"
 )
 
-func main() {
+func frontend() {
 	// Initialization
-	pool.GenesisPool()
-	network.startServer(make(chan bool))
+	GenesisPool()
+	startServer(make(chan bool))
 
 	offset := true
 	for offset {
@@ -66,8 +63,8 @@ func newM() {
 	fmt.Println("func!!!!!!!!!!!")
 
 	// Fetch message from user, choose public key, read public key into pubkey
-	blk := block.CreateBlock(message, pubkey)
-	network.forwardBlock(blk)
+	blk := CreateBlock(message, pubkey)
+	forwardBlock(blk)
 }
 
 /* Used by storeAPublicKey function */
