@@ -40,13 +40,20 @@ func mainMenu() {
 
 	fmt.Println(`     
 ★ Main Menu ★
-1. Send a message
-2. View received messages
-3. Manage recipients' public keys
-4. Manage personal private keys
-5. View more options ->
+★ Messages
+  1. Send a message
+  2. View received messages
 
-x. Exit Forest
+★ Keys
+  3. Manage recipients' public keys
+  4. Manage personal private keys
+
+★ Other
+  5. Configuration
+  6. Examine the Block Forest
+  7. View source/issues/contributors (Opens Github)
+
+  x. Exit Forest
 `)
 
 	fmt.Print("Make selection > ")
@@ -63,7 +70,11 @@ x. Exit Forest
 	case "4":
 		managePrivateKeys()
 	case "5":
-		moreOptions()
+		config()
+	case "6":
+		examineForest()
+	case "7":
+		openGithub()
 	case "x":
 		clearScreen()
 		fmt.Println("Exiting Forest. Goodbye.")
@@ -72,37 +83,6 @@ x. Exit Forest
 		fmt.Println("Unknown input. Try again.")
 	}
 	mainMenu()
-}
-
-func moreOptions() {
-	clearScreen()
-	printBanner()
-
-	fmt.Println(`     
-★ More Options... ★
-1. Configuration
-2. Examine the Block Forest
-3. View source/issues/contributors (Opens Github)
-4. <- Return to Main Menu
-`)
-
-	fmt.Print("Make selection > ")
-	var selection int
-	fmt.Scan(&selection)
-
-	switch selection {
-	case 1:
-		config()
-	case 2:
-		examineForest()
-	case 3:
-		openGithub()
-	case 4:
-		return
-	default:
-		fmt.Println("Unknown input. Try again.")
-	}
-	moreOptions()
 }
 
 func sendMessage() {
@@ -117,8 +97,8 @@ func managePublicKeys() {
 	clearScreen()
 	printBanner()
 
-	// Open the 'pubKeys' database. It is created if it does not exist.
-	db, err := leveldb.OpenFile("pubKeys", nil)
+	// Open the '.pubKeys' database. It is created if it does not exist.
+	db, err := leveldb.OpenFile(".pubKeys", nil)
 	if err != nil {
 		panic("Could not open public key database file.")
 	}

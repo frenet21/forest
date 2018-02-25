@@ -3,10 +3,12 @@ Blockchain Distributed Hyper-Secure Encrypted Messenger
 ![alt text](https://i1.wp.com/www.sgs.com/-/media/global/images/structural-website-images/hero-images/hero-agri-forestry.jpg?resize=525%2C303 "forest")
 
 ## Package dependencies
+Run `go get` on the following:
 ```
 golang.org/x/crypto/sha3
 github.com/skratchdot/open-golang/open
 github.com/syndtr/goleveldb/leveldb
+golang.org/x/crypto/sha3
 ```
 
 ## Building
@@ -18,8 +20,3 @@ chmod +x ./build.sh
 
 Then run
 `./forest`
-
-## SHA3
-To install the SHA3 package used here, run
-
-`go get -u golang.org/x/crypto/sha3`

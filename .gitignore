@@ -16,6 +16,6 @@
 .DS_Store
 
 # Forest Databases
-pubKeys/
-priKeys/
-knownBlocks/
+.pubKeys/
+.priKeys/
+.knownBlocks/

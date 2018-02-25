@@ -1,7 +1,7 @@
 #!/bin/bash
 # Remove the databases
 echo "Deleting databases..."
-echo `rm -rf pubKeys`
+echo `rm -rf .pubKeys .priKeys .knownBlocks`
 
 # Remove the binary and rebuild
 echo "Deleting existing binaries..."
