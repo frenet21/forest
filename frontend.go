@@ -11,7 +11,7 @@ import (
 )
 
 func clearScreen() {
-	c := exec.Command("clear")
+	c := exec.Command("reset")
 	c.Stdout = os.Stdout
 	c.Run()
 }
@@ -122,7 +122,7 @@ List of known recipient public keys:
 
 		// Print the strings
 		fmt.Print("NAME: " + nameString)
-		fmt.Println("KEY:" + pubKeyString)
+		fmt.Println("KEY: " + pubKeyString)
 	}
 	iter.Release()
 	err = iter.Error()
