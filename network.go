@@ -63,15 +63,16 @@ func acceptBlock(conn net.Conn) {
 
 	// Check the blockID against database of hashes in frontend
 	check := CheckKnownHashes(blockID)
-	// If the hash is known. Stop here
+
+	// If the hash is known, stop here
 	if check {
 		log.Print("[NET - ACCEPTOR] Received block is known. Discarding...")
 		return
-	} else {
-		// Or forward the block if new
-		log.Print("[NET - ACCEPTOR] New block ID identified. Adding to list...")
-		forwardBlock(Block)
 	}
+	// Or add hash and forward the block if new
+	log.Print("[NET - ACCEPTOR] New block ID identified. Adding to list...")
+	AddNewHash(blockID)
+	forwardBlock(Block)
 }
 
 // acceptBlock function passes OK'd blocks here
