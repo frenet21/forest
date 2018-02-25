@@ -18,4 +18,4 @@
 # Forest Databases
 .pubKeys/
 .priKeys/
-.knownBlocks/
+.knownHashes/
