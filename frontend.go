@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
 
 	"github.com/skratchdot/open-golang/open"
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func clearScreen() {
@@ -40,8 +42,8 @@ func mainMenu() {
 ★ Main Menu ★
 1. Send a message
 2. View received messages
-3. Add a recipient's public key
-4. Add a personal private key
+3. Manage recipients' public keys
+4. Manage personal private keys
 5. View more options ->
 
 x. Exit Forest
@@ -57,9 +59,9 @@ x. Exit Forest
 	case "2":
 		viewReceived()
 	case "3":
-		addPublicKey()
+		managePublicKeys()
 	case "4":
-		addPrivateKey()
+		managePrivateKeys()
 	case "5":
 		moreOptions()
 	case "x":
@@ -89,7 +91,6 @@ func moreOptions() {
 	fmt.Scan(&selection)
 
 	switch selection {
-	/* Todo: add functions for secondary menu */
 	case 1:
 		config()
 	case 2:
@@ -97,7 +98,7 @@ func moreOptions() {
 	case 3:
 		openGithub()
 	case 4:
-		mainMenu()
+		return
 	default:
 		fmt.Println("Unknown input. Try again.")
 	}
@@ -112,11 +113,92 @@ func viewReceived() {
 
 }
 
-func addPublicKey() {
+func managePublicKeys() {
+	clearScreen()
+	printBanner()
 
+	// Open the 'pubKeys' database. It is created if it does not exist.
+	db, err := leveldb.OpenFile("pubKeys", nil)
+	if err != nil {
+		panic("Could not open public key database file.")
+	}
+	fmt.Println(`
+★ Main Menu -> Manage public keys ★
+List of known recipient public keys:
+`)
+
+	iter := db.NewIterator(nil, nil)
+	if db == nil {
+		fmt.Print("nil")
+	}
+	for iter.Next() {
+		// Grab the pubKey (key) and name (value) from the local database
+		pubKey := iter.Key()
+		name := iter.Value()
+
+		// String the byte arrays
+		pubKeyString := string(pubKey[:])
+		nameString := string(name[:])
+
+		// Print the strings
+		fmt.Print("NAME: " + nameString)
+		fmt.Println("KEY:" + pubKeyString)
+	}
+	iter.Release()
+	err = iter.Error()
+
+	fmt.Println(`
+1. Add new recipient public keys
+2. Remove recipient public keys
+3. <- Return to main menu
+`)
+
+	fmt.Print("Make selection > ")
+	var selection int
+	fmt.Scan(&selection)
+
+	switch selection {
+	case 1:
+		fmt.Println("You will be prompted to add the recipient's public key and name it.")
+
+		// User pastes in the public key and names it
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Println("Paste public key > ")
+		pubKey, _ := reader.ReadString('\n')
+		fmt.Println("Give a name to this key > ")
+		name, _ := reader.ReadString('\n')
+
+		// Key and name are put into the 'pubKeys' database
+		// 'pubKey' is the key, 'name' is the name in case of duplicates
+		err = db.Put([]byte(pubKey), []byte(name), nil)
+		if err != nil {
+			panic("Failed to write new public key to database.")
+		}
+	case 2:
+		// User pastes in the public key and names it
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("Paste in the public key you wish to remove >")
+		pubKey, _ := reader.ReadString('\n')
+
+		data, err := db.Get([]byte(pubKey), nil)
+		if err != nil {
+			panic("Unknown key.")
+		}
+		// If the key matches, string it for printing
+		dataString := string(data[:])
+		// Attempt to delete the key from the database
+		fmt.Print("Deleting " + dataString + "...")
+		err = db.Delete([]byte(pubKey), nil)
+		fmt.Print("Deleted key.")
+	case 3:
+		db.Close()
+		return
+	}
+	managePublicKeys()
+	db.Close()
 }
 
-func addPrivateKey() {
+func managePrivateKeys() {
 
 }
 
