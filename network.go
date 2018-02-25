@@ -2,12 +2,13 @@ package main
 
 import (
 	"bufio"
+	"crypto/rand"
+	"crypto/rsa"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"strings"
-
 )
 
 const (
@@ -32,7 +33,7 @@ func startServer(done chan bool) {
 	if err != nil {
 		log.Print("[NET - SERVER] Failed to start the server.")
 	} else {
-		log.Print("[NET - SERVER] Server started on" + LOCAL_SERV_ADDR + LOCAL_SERV_PORT)
+		log.Print("[NET - SERVER] Server started on " + LOCAL_SERV_ADDR + LOCAL_SERV_PORT)
 	}
 
 	// Server start is completed
@@ -64,7 +65,9 @@ func acceptBlock(conn net.Conn) {
 	// Check if the known hash text file exists
 	_, err := os.Stat(ID_LIST_PATH)
 	if err != nil {
-		file, err := os.Create(ID_LIST_PATH)
+		/*
+			file, err := os.Create(ID_LIST_PATH)
+		*/
 		if err != nil {
 			log.Print("[NET - ACCEPTOR] Failed to create file.")
 		} else {
@@ -85,8 +88,10 @@ func acceptBlock(conn net.Conn) {
 			f.Close()
 		} else {
 			log.Print("[NET - ACCEPTOR] New block ID identified. Adding to list...")
-			f, err := os.OpenFile(ID_LIST_PATH, os.O_APPEND|os.O_WRONLY, 0644)
-			n, err := f.WriteString(blockID)
+			f, _ := os.OpenFile(ID_LIST_PATH, os.O_APPEND|os.O_WRONLY, 0644)
+			/*
+				n, _ := f.WriteString(blockID)
+			*/
 			f.Close()
 
 			// Pass block to forwardBlock function
@@ -128,6 +133,7 @@ func forwardBlock(blk Block) {
 		TODO: Loop through files or entries of private keys
 	*/
 
+	var priKey, _ = rsa.GenerateKey(rand.Reader, 256)
 	// Attempt a decryption of the received block after passing to known clients
 	message, err := AttemptDecrypt(blk, priKey)
 	if err != nil {
