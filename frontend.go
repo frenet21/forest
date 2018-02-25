@@ -163,9 +163,9 @@ List of known recipient public keys:
 
 		// User pastes in the public key and names it
 		reader := bufio.NewReader(os.Stdin)
-		fmt.Println("Paste public key > ")
+		fmt.Print("Paste public key > ")
 		pubKey, _ := reader.ReadString('\n')
-		fmt.Println("Give a name to this key > ")
+		fmt.Print("Give a name to this key > ")
 		name, _ := reader.ReadString('\n')
 
 		// Key and name are put into the 'pubKeys' database
@@ -196,9 +196,8 @@ List of known recipient public keys:
 	default:
 		managePublicKeys()
 	}
-
-	managePublicKeys()
 	db.Close()
+	managePublicKeys()
 }
 
 func managePrivateKeys() {
