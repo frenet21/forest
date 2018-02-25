@@ -193,7 +193,10 @@ List of known recipient public keys:
 	case 3:
 		db.Close()
 		return
+	default:
+		managePublicKeys()
 	}
+
 	managePublicKeys()
 	db.Close()
 }
