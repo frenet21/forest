@@ -91,7 +91,7 @@ func moreOptions() {
 	switch selection {
 	/* Todo: add functions for secondary menu */
 	case 1:
-		configuration()
+		config()
 	case 2:
 		examineForest()
 	case 3:
@@ -120,7 +120,7 @@ func addPrivateKey() {
 
 }
 
-func configuration() {
+func config() {
 
 }
 
