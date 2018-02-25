@@ -8,7 +8,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"strings"
 )
 
 const (
@@ -62,41 +61,16 @@ func acceptBlock(conn net.Conn) {
 	// Select the block ID from the Block
 	blockID := string(Block.ID[:64])
 
-	// Check if the known hash text file exists
-	_, err := os.Stat(ID_LIST_PATH)
-	if err != nil {
-		/*
-			file, err := os.Create(ID_LIST_PATH)
-		*/
-		if err != nil {
-			log.Print("[NET - ACCEPTOR] Failed to create file.")
-		} else {
-			log.Print("[NET - ACCEPTOR] A new ID list file was created.")
-		}
-	}
-
-	// Search the known_hash.txt file for the blockID
-	f, err := os.Open(ID_LIST_PATH)
-	if err != nil {
-		log.Print("[NET - ACCEPTOR] Could not open the file.")
-	}
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		// If it is there, discard the Block and stop this function
-		if strings.Contains(scanner.Text(), blockID) {
-			log.Print("[NET - ACCEPTOR] Received block is known. Discarding...")
-			f.Close()
-		} else {
-			log.Print("[NET - ACCEPTOR] New block ID identified. Adding to list...")
-			f, _ := os.OpenFile(ID_LIST_PATH, os.O_APPEND|os.O_WRONLY, 0644)
-			/*
-				n, _ := f.WriteString(blockID)
-			*/
-			f.Close()
-
-			// Pass block to forwardBlock function
-			forwardBlock(Block)
-		}
+	// Check the blockID against database of hashes in frontend
+	check := CheckKnownHashes(blockID)
+	// If the hash is known. Stop here
+	if check {
+		log.Print("[NET - ACCEPTOR] Received block is known. Discarding...")
+		return
+	} else {
+		// Or forward the block if new
+		log.Print("[NET - ACCEPTOR] New block ID identified. Adding to list...")
+		forwardBlock(Block)
 	}
 }
 
@@ -143,6 +117,7 @@ func forwardBlock(blk Block) {
 		log.Print("[NET - FORWARDER] \n[BEGIN DECRYPTED MESSAGE]\n" + message + "\n[END DECRYPTED MESSAGE]")
 		/*
 			TODO: Send block to frontend function
+			(in received messages)
 		*/
 
 	}
