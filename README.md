@@ -1,6 +1,6 @@
 # forest
 Blockchain Distributed Hyper-Secure Encrypted Messenger
-![alt text](https://i1.wp.com/www.sgs.com/-/media/global/images/structural-website-images/hero-images/hero-agri-forestry.jpg?resize=525%2C303 "forest")
+![Starry Forest](http://www.kavlifoundation.org/sites/default/files/Milky%20Way.jpg)
 
 ## Package dependencies
 Run `go get` on the following:
