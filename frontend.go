@@ -103,6 +103,7 @@ func managePublicKeys() {
 	if err != nil {
 		panic("Could not open public key database file.")
 	}
+
 	fmt.Println(`
 ★ Main Menu -> Manage public keys ★
 List of known recipient public keys:
@@ -202,7 +203,7 @@ func managePrivateKeys() {
 
 	switch selection {
 	case 1:
-		fmt.Println("Displaying keys: ")
+		fmt.Println("! ! ! Displaying keys ! ! ! ")
 		iter := db.NewIterator(nil, nil)
 		for iter.Next() {
 			// Grab the priKey (key) and name (value) from the local database
@@ -220,7 +221,7 @@ func managePrivateKeys() {
 		iter.Release()
 		err = iter.Error()
 
-		fmt.Print("Press enter to continue...")
+		fmt.Print("Press enter to hide keys...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 	case 2:
 		fmt.Println("You will be prompted to add your private key name it.")
@@ -278,3 +279,50 @@ func examineForest() {
 func openGithub() {
 	open.Run("https://github.com/stellar-tech/forest")
 }
+
+/* Exported functions */
+
+/* Checks the .knownHashes database to see if it a hash exists (returns true/false) */
+func CheckKnownHashes(blockID string) bool {
+	db, err := leveldb.OpenFile(".knownHashes", nil)
+	if err != nil {
+		panic("Could not open the known hash database.")
+	}
+
+	// Set results into data
+	data, err := db.Get([]byte(blockID), nil)
+	db.Close()
+
+	if len(data) > 0 {
+		return true
+	} else {
+		return false
+	}
+}
+
+/* Receives a blockID and adds it to the .knownHashes database */
+func AddNewHash(blockID string) {
+	db, err := leveldb.OpenFile(".knownHashes", nil)
+	if err != nil {
+		panic("Could not open the known hash database.")
+	}
+
+	err = db.Put([]byte(blockID), []byte(nil), nil)
+	db.Close()
+}
+
+/*
+func GetClientList() {
+	db, err := leveldb.OpenFile(".knownClients", nil)
+	if err != nil {
+		panic("Could not open the known client list.")
+	}
+
+	// Set results into data
+
+	// Todo: Get all keys in data
+	data, err := db.Get([]byte(""), nil)
+	db.Close()
+	fmt.Print(data)
+}
+*/
