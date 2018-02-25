@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 
@@ -11,7 +12,7 @@ import (
 )
 
 func clearScreen() {
-	c := exec.Command("reset")
+	c := exec.Command("clear")
 	c.Stdout = os.Stdout
 	c.Run()
 }
@@ -108,9 +109,6 @@ List of known recipient public keys:
 `)
 
 	iter := db.NewIterator(nil, nil)
-	if db == nil {
-		fmt.Print("nil")
-	}
 	for iter.Next() {
 		// Grab the pubKey (key) and name (value) from the local database
 		pubKey := iter.Key()
@@ -181,7 +179,92 @@ List of known recipient public keys:
 }
 
 func managePrivateKeys() {
+	clearScreen()
+	printBanner()
 
+	// Open the '.pubKeys' database. It is created if it does not exist.
+	db, err := leveldb.OpenFile(".priKeys", nil)
+	if err != nil {
+		panic("Could not open public key database file.")
+	}
+
+	fmt.Println(`
+★ Main Menu -> Manage private keys ★
+1. Show my private keys (Careful!)
+2. Add a new private key
+3. Remove a private key
+4. <- Return to main menu
+`)
+
+	fmt.Print("Make selection > ")
+	var selection int
+	fmt.Scan(&selection)
+
+	switch selection {
+	case 1:
+		fmt.Println("Displaying keys: ")
+		iter := db.NewIterator(nil, nil)
+		for iter.Next() {
+			// Grab the priKey (key) and name (value) from the local database
+			priKey := iter.Key()
+			name := iter.Value()
+
+			// String the byte arrays
+			priKeyString := string(priKey[:])
+			nameString := string(name[:])
+
+			// Print the strings
+			fmt.Print("NAME: " + nameString)
+			fmt.Println("KEY: " + priKeyString)
+		}
+		iter.Release()
+		err = iter.Error()
+
+		fmt.Print("Press enter to continue...")
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+	case 2:
+		fmt.Println("You will be prompted to add your private key name it.")
+
+		// User pastes in their private key and names it
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("Paste private key > ")
+		priKey, _ := reader.ReadString('\n')
+		fmt.Print("Give a name to this key > ")
+		name, _ := reader.ReadString('\n')
+
+		// Key and name are put into the 'pubKeys' database
+		// 'pubKey' is the key, 'name' is the name in case of duplicates
+		err = db.Put([]byte(priKey), []byte(name), nil)
+		if err != nil {
+			panic("Failed to write new private key to database.")
+		}
+	case 3:
+		// User pastes in the private key and names it
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("Paste in the private key you wish to remove >")
+		priKey, _ := reader.ReadString('\n')
+
+		data, err := db.Get([]byte(priKey), nil)
+		if err != nil {
+			panic("Unknown key.")
+		}
+		// If the key matches, string it for printing
+		dataString := string(data[:])
+		// Attempt to delete the key from the database
+		fmt.Print("Deleting " + dataString + "...")
+		err = db.Delete([]byte(priKey), nil)
+		if err != nil {
+			log.Println("Could not delete key.")
+		}
+		fmt.Print("Deleted key.")
+	case 4:
+		db.Close()
+		return
+	default:
+		managePrivateKeys()
+	}
+	db.Close()
+	managePrivateKeys()
 }
 
 func config() {
